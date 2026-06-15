@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ActivityIndicator, ScrollView, StatusBar, AppState } from 'react-native';
+import { View, Text, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { auth, database } from '@/config/firebase';
 import { useFonts } from 'expo-font';
@@ -8,11 +8,13 @@ import { HeaderListComando } from '@/components/HeaderListComando';
 import { ListaComandos } from '@/components/ListaLembretes';
 import { Dashboard } from '@/components/Dashboard';
 import { Header } from '@/components/Header';
+import { PendingActionModal } from '@/components/PendingActionModal';
 import { Atmosphere } from '@/components/ui/Atmosphere';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { Eyebrow } from '@/components/ui/Eyebrow';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboard } from '@/hooks/useDashboard';
+import { usePendingActions } from '@/hooks/usePendingActions';
 import { useFocusEffect } from 'expo-router';
 
 export default function Home() {
@@ -25,6 +27,14 @@ export default function Home() {
   const [userName, setUserName] = useState('');
   const [loadingName, setLoadingName] = useState(true);
   const queryClient = useQueryClient();
+  const {
+    pendingActions,
+    confirmPending,
+    cancelPending,
+    isConfirming,
+    isCanceling,
+  } = usePendingActions();
+  const pendingAction = pendingActions[0] ?? null;
 
   const descriptionText = userName
     ? `${userName}, acompanhe seus indicadores e mantenha os comandos organizados.`
@@ -61,6 +71,10 @@ export default function Home() {
 
       queryClient.invalidateQueries({
         queryKey: ['dashboard', user?.uid],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ['pendencias', user?.uid],
       });
     }, [queryClient, user?.uid])
   );
@@ -132,6 +146,22 @@ export default function Home() {
         visible={modalVisible}
         onClose={handleCloseModal}
       /> */}
+      <PendingActionModal
+        visible={!!pendingAction}
+        action={pendingAction}
+        isConfirming={isConfirming}
+        isCanceling={isCanceling}
+        onConfirm={() => {
+          if (pendingAction) {
+            void confirmPending(pendingAction.id);
+          }
+        }}
+        onCancel={() => {
+          if (pendingAction) {
+            void cancelPending(pendingAction.id);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -41,12 +41,35 @@ function horaValida(texto: string) {
     return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
 }
 
+function formatarDataLocal(data: Date) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+
+    return `${ano}-${mes}-${dia}`;
+}
+
+function calcularProximaData(horaTexto: string) {
+    const [hh, mm] = horaTexto.split(':').map(Number);
+    const dataLembrete = new Date();
+
+    dataLembrete.setHours(hh, mm, 0, 0);
+
+    if (dataLembrete.getTime() <= Date.now()) {
+        dataLembrete.setDate(dataLembrete.getDate() + 1);
+    }
+
+    return formatarDataLocal(dataLembrete);
+}
+
 async function criarLembreteApi({ horaTexto, textComando }: CriarLembreteParams) {
     const numero = await buscarTelefoneFirebase();
 
     await api.post('/api/lembrete', {
         numero,
-        mensagem: `lembrar ${horaTexto} ${textComando.trim()}`,
+        date: calcularProximaData(horaTexto),
+        time: horaTexto,
+        message: textComando.trim(),
     });
 }
 
