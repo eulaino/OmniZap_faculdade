@@ -66,14 +66,6 @@ const panelShadow = {
   elevation: 3,
 };
 
-const controlShadow = {
-  shadowColor: '#0F3D35',
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.045,
-  shadowRadius: 16,
-  elevation: 1,
-};
-
 function mensagemTemHorario(texto: string) {
   return /\b(?:[01]?\d|2[0-3])(?::[0-5]\d|h(?:[0-5]\d)?)\b/i.test(texto);
 }
@@ -249,12 +241,13 @@ export default function CriarComando() {
                 onPress={() => router.back()}
                 accessibilityRole="button"
                 accessibilityLabel="Voltar"
-                className="h-11 w-11 items-center justify-center rounded-2xl bg-white"
-                style={controlShadow}>
+                className="h-11 w-11 items-center justify-center">
                 <BackButtonIcon size={24} />
               </Pressable>
 
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[13px] text-[#747887]">
+              <Text
+                style={{ fontFamily: 'Inter_900Black' }}
+                className="text-center text-[20px] leading-6 text-[#24252C]">
                 Novo lembrete
               </Text>
 
