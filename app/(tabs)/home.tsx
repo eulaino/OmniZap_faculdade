@@ -16,6 +16,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboard } from '@/hooks/useDashboard';
 import { usePendingActions } from '@/hooks/usePendingActions';
 import { useFocusEffect } from 'expo-router';
+import { useBotHealth } from '@/hooks/useBotHealth';
+import { BotHealthBanner } from '@/components/BotHealthBanner';
+import Toast from 'react-native-toast-message';
 
 export default function Home() {
   const [fontsLoaded] = useFonts({
@@ -27,13 +30,8 @@ export default function Home() {
   const [userName, setUserName] = useState('');
   const [loadingName, setLoadingName] = useState(true);
   const queryClient = useQueryClient();
-  const {
-    pendingActions,
-    confirmPending,
-    cancelPending,
-    isConfirming,
-    isCanceling,
-  } = usePendingActions();
+  const { pendingActions, confirmPending, cancelPending, isConfirming, isCanceling } =
+    usePendingActions();
   const pendingAction = pendingActions[0] ?? null;
 
   const descriptionText = userName
@@ -53,7 +51,7 @@ export default function Home() {
           setUserName(val.name ?? '');
         }
       } catch (error) {
-        console.log("Erro ao buscar nome:", error);
+        console.log('Erro ao buscar nome:', error);
       } finally {
         setLoadingName(false);
       }
@@ -78,26 +76,47 @@ export default function Home() {
       });
     }, [queryClient, user?.uid])
   );
+  const { data, isLoading, isFetching: isDashboardFetching, isError } = useDashboard();
+
   const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-  } = useDashboard();
+    data: botHealth,
+    isFetching: isCheckingBotHealth,
+    refetch: refetchBotHealth,
+  } = useBotHealth();
 
+  const botOffline = botHealth?.state === 'offline';
 
+  const handleTestBotConnection = useCallback(async () => {
+    const result = await refetchBotHealth();
+    const state = result.data?.state ?? 'offline';
 
-  const statusServer = isError ? 'Bot offline' : 'Bot conectado';
+    Toast.show({
+      type: state === 'online' ? 'success' : 'error',
+      text1: state === 'online' ? 'Bot conectado' : 'Bot offline',
+      text2: state === 'online' ? 'Conexao restabelecida.' : 'Ainda nao foi possivel conectar.',
+      position: 'bottom',
+      bottomOffset: 140,
+    });
+  }, [refetchBotHealth]);
+
+  const statusServer = botOffline
+    ? 'Bot offline'
+    : isCheckingBotHealth
+      ? 'Verificando bot'
+      : isError
+        ? 'API instavel'
+        : 'Bot conectado';
   const statusBg = isError
     ? 'bg-red-500'
-    : isFetching
-      ? 'bg-slate-500'
-      : 'bg-green-500';
+    : botOffline
+      ? 'bg-red-500'
+      : isCheckingBotHealth || isDashboardFetching
+        ? 'bg-slate-500'
+        : 'bg-green-500';
 
   /*   const atualizarLista = useCallback(() => {
       setRefreshKey((prev) => prev + 1);
     }, []); */
-
 
   if (!fontsLoaded || loadingName || isLoading) {
     return (
@@ -113,12 +132,18 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-[#EAF7F1]" edges={['top']}>
       <StatusBar backgroundColor="#EAF7F1" barStyle="dark-content" />
       <Header status={statusServer} statusBg={statusBg} />
+      {botOffline ? (
+        <BotHealthBanner
+          checkedAt={botHealth?.checkedAt}
+          isChecking={isCheckingBotHealth}
+          onTestConnection={handleTestBotConnection}
+        />
+      ) : null}
 
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-4 pb-8 pt-5"
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <Atmosphere>
           <SurfaceCard>
             <Eyebrow>painel diario</Eyebrow>
@@ -127,11 +152,12 @@ export default function Home() {
               Controle da sua operacao
             </Text>
 
-            <Text className="mt-2 text-sm leading-5 text-slate-500">
-              {descriptionText}
-            </Text>
+            <Text className="mt-2 text-sm leading-5 text-slate-500">{descriptionText}</Text>
 
-            <Dashboard totalComandos={data?.total_comandos ?? 0} totalAtendimentos={data?.total_atendimentos ?? 0} />
+            <Dashboard
+              totalComandos={data?.total_comandos ?? 0}
+              totalAtendimentos={data?.total_atendimentos ?? 0}
+            />
           </SurfaceCard>
 
           <SurfaceCard className="mt-4">
