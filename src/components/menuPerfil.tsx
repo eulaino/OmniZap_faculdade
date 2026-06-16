@@ -76,7 +76,7 @@ export function MenuPerfil({ userName }: ModalProps) {
       <MenuRow
         icon="notifications-outline"
         title="Notificacoes"
-        subtitle="Minha central de alertas"
+        subtitle="Meus lembretes no WhatsApp"
       />
       <Divider />
 

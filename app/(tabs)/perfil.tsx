@@ -109,7 +109,7 @@ export default function Perfil() {
             <Text className="mt-2 text-3xl font-black leading-9 text-slate-900">Perfil</Text>
 
             <Text className="mt-2 text-sm leading-5 text-slate-500">
-              Centralize seus dados e acessos em uma experiencia limpa e organizada.
+              Mantenha seu nome e WhatsApp atualizados para receber seus lembretes.
             </Text>
 
             <View className="mt-5 rounded-2xl border border-[#DCEAE5] bg-[#F7FCFA] p-4">

@@ -30,8 +30,8 @@ export default function Home() {
   const pendingAction = pendingActions[0] ?? null;
 
   const descriptionText = userName
-    ? `${userName}, acompanhe seus indicadores e mantenha os comandos organizados.`
-    : 'Acompanhe seus indicadores e mantenha os comandos organizados.';
+    ? `${userName}, acompanhe seus lembretes e receba avisos direto no WhatsApp.`
+    : 'Acompanhe seus lembretes e receba avisos direto no WhatsApp.';
 
   useEffect(() => {
     async function buscarNome() {
@@ -137,10 +137,10 @@ export default function Home() {
         showsVerticalScrollIndicator={false}>
         <Atmosphere>
           <SurfaceCard>
-            <Eyebrow>painel diario</Eyebrow>
+            <Eyebrow>lembretes</Eyebrow>
 
             <Text className="mt-2 text-3xl font-black leading-9 text-slate-900">
-              Controle da sua operacao
+              Seus avisos no WhatsApp
             </Text>
 
             <Text className="mt-2 text-sm leading-5 text-slate-500">{descriptionText}</Text>

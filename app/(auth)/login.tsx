@@ -136,7 +136,7 @@ export default function LoginPage() {
       : 'border-[#C8DAD4]';
 
   const title = isLogin ? 'Entrar' : 'Criar conta';
-  const buttonLabel = isLogin ? 'Entrar na central' : 'Criar conta';
+  const buttonLabel = isLogin ? 'Ver meus lembretes' : 'Criar conta';
   const footerPrefix = isLogin ? 'Ainda nao tem conta?' : 'Ja tem conta?';
   const footerAction = isLogin ? 'Criar conta' : 'Entrar';
 
@@ -149,8 +149,8 @@ export default function LoginPage() {
     <SafeAreaView className="flex-1 bg-[#F7FCFA]" edges={['top']}>
       <StatusBar backgroundColor="#128C7E" barStyle="light-content" />
 
-      <View className="absolute left-0 right-0 top-0 h-[352px] overflow-hidden">
-        <AuthWaveBackdropSvg width={430} height={352} />
+      <View className="absolute left-0 right-0 top-0 h-[336px] overflow-hidden">
+        <AuthWaveBackdropSvg width={430} height={336} />
       </View>
 
       <KeyboardAwareScrollView
@@ -159,7 +159,7 @@ export default function LoginPage() {
           flexGrow: 1,
           paddingHorizontal: 28,
           paddingBottom: 32,
-          paddingTop: 228,
+          paddingTop: 292,
         }}
         enableOnAndroid
         extraScrollHeight={84}
@@ -193,6 +193,9 @@ export default function LoginPage() {
                         <Mail size={16} color={errors.email ? '#E11D48' : '#6B8A81'} />
                         <TextInput
                           allowFontScaling={false}
+                          cursorColor="#128C7E"
+                          selectionColor="#128C7E"
+                          underlineColorAndroid="transparent"
                           placeholder="seu@email.com"
                           placeholderTextColor="#8FA39C"
                           value={value}
@@ -242,6 +245,11 @@ export default function LoginPage() {
                         <LockKeyhole size={16} color={errors.password ? '#E11D48' : '#6B8A81'} />
                         <TextInput
                           allowFontScaling={false}
+                          cursorColor="#128C7E"
+                          importantForAutofill="no"
+                          selectionColor="#128C7E"
+                          textContentType="none"
+                          underlineColorAndroid="transparent"
                           placeholder="sua senha"
                           placeholderTextColor="#8FA39C"
                           value={value}
@@ -250,7 +258,7 @@ export default function LoginPage() {
                             clearFeedback();
                           }}
                           secureTextEntry={!showPassword}
-                          autoComplete={isLogin ? 'current-password' : 'new-password'}
+                          autoComplete="off"
                           onFocus={() => setFocusedField('password')}
                           onBlur={() =>
                             setFocusedField((previous) =>
@@ -330,7 +338,7 @@ export default function LoginPage() {
                 onPress={handleSubmit(handleAuth)}
                 disabled={busy}
                 accessibilityRole="button"
-                accessibilityLabel={isLogin ? 'Entrar na central' : 'Criar minha conta'}
+                accessibilityLabel={isLogin ? 'Ver meus lembretes' : 'Criar minha conta'}
                 accessibilityState={{ disabled: busy, busy: loading }}
                 className={`h-14 items-center justify-center rounded-2xl ${
                   busy ? 'bg-[#128C7E]/55' : 'bg-[#128C7E] active:bg-[#0f766e]'

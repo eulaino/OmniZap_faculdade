@@ -24,7 +24,7 @@ function DashboardComponent({ totalComandos, totalAtendimentos }: DashboardProps
         </Text>
 
         <Text className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Atendimentos
+          Notificacoes
         </Text>
       </View>
 

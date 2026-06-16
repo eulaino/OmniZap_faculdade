@@ -271,7 +271,7 @@ function ListaComandosComponent() {
   if (isError) {
     return (
       <View className="items-center rounded-2xl border border-red-200 bg-red-50 px-4 py-7">
-        <Text className="text-sm font-semibold text-red-700">Erro ao carregar comandos</Text>
+        <Text className="text-sm font-semibold text-red-700">Erro ao carregar lembretes</Text>
       </View>
     );
   }
@@ -280,9 +280,9 @@ function ListaComandosComponent() {
     <View className="gap-3">
       {!lembretes.length ? (
         <View className="items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7">
-          <Text className="text-sm font-semibold text-slate-700">Nenhum comando cadastrado</Text>
+          <Text className="text-sm font-semibold text-slate-700">Nenhum lembrete cadastrado</Text>
           <Text className="mt-1 text-center text-xs leading-5 text-slate-500">
-            Toque em Novo para criar o primeiro gatilho.
+            Toque em Novo para criar seu primeiro aviso no WhatsApp.
           </Text>
         </View>
       ) : (
