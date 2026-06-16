@@ -3,6 +3,12 @@ import Toast from 'react-native-toast-message';
 
 import { auth } from '@/config/firebase';
 import { api } from '@/services/api';
+import {
+  APP_DATA_REFETCH_INTERVAL_MS,
+  dashboardQueryKey,
+  pendingActionsQueryKey,
+  reminderQueryKey,
+} from '@/services/reminderQueries';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
 
 export type PendingActionPayload = {
@@ -35,7 +41,7 @@ async function buscarPendencias() {
     .slice()
     .sort(
       (a: PendingAction, b: PendingAction) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 }
 
@@ -70,23 +76,26 @@ async function cancelarPendencia(id: number) {
 export function usePendingActions() {
   const user = auth.currentUser;
   const queryClient = useQueryClient();
+  const pendingKey = pendingActionsQueryKey(user?.uid);
+  const remindersKey = reminderQueryKey(user?.uid);
+  const dashboardKey = dashboardQueryKey(user?.uid);
 
   const query = useQuery<PendingAction[]>({
-    queryKey: ['pendencias', user?.uid],
+    queryKey: pendingKey,
     queryFn: buscarPendencias,
     enabled: !!user?.uid,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnReconnect: true,
-    refetchInterval: 10000,
+    refetchInterval: APP_DATA_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });
 
   const invalidateAppData = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['pendencias', user?.uid] }),
-      queryClient.invalidateQueries({ queryKey: ['lembretes', user?.uid] }),
-      queryClient.invalidateQueries({ queryKey: ['dashboard', user?.uid] }),
+      queryClient.invalidateQueries({ queryKey: pendingKey }),
+      queryClient.invalidateQueries({ queryKey: remindersKey }),
+      queryClient.invalidateQueries({ queryKey: dashboardKey }),
     ]);
   };
 

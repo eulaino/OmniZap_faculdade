@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import {
     Modal,
@@ -15,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { auth } from '@/config/firebase';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { dashboardQueryKey, reminderQueryKey } from '@/services/reminderQueries';
 
 
 export type CommandModalProps = {
@@ -58,8 +58,8 @@ function CommandModalComponent({ visible, onClose }: CommandModalProps) {
     const createMutation = useMutation({
         mutationFn: criarLembreteApi,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['lembretes'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard', user?.uid] });
+            queryClient.invalidateQueries({ queryKey: reminderQueryKey(user?.uid) });
+            queryClient.invalidateQueries({ queryKey: dashboardQueryKey(user?.uid) });
 
             onClose();
 

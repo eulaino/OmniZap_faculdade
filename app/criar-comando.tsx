@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -20,6 +20,9 @@ import { Atmosphere } from '@/components/ui/Atmosphere';
 import { Eyebrow } from '@/components/ui/Eyebrow';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { api } from '@/services/api';
+import { auth } from '@/config/firebase';
+import { buildOptimisticReminder, type ReminderCacheItem } from '@/services/reminderCache';
+import { dashboardQueryKey, reminderQueryKey } from '@/services/reminderQueries';
 import {
   WEEKDAY_OPTIONS,
   addDaysToInputDate,
@@ -106,6 +109,8 @@ export default function CriarComando() {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(inputDateToDate(dateTexto) ?? new Date());
   const [campoFocado, setCampoFocado] = useState<'comando' | 'data' | 'hora' | null>(null);
+  const queryClient = useQueryClient();
+  const user = auth.currentUser;
   const selectedDate = inputDateToDate(dateTexto) ?? new Date();
   const selectedWeekdayLabel = getInputDateWeekdayLabel(dateTexto);
   const selectedDateSummary = formatInputDateLong(dateTexto);
@@ -116,22 +121,54 @@ export default function CriarComando() {
 
   const createMutation = useMutation({
     mutationFn: criarLembreteApi,
-    onSuccess: () => {
+    onMutate: async (draft) => {
+      const remindersKey = reminderQueryKey(user?.uid);
+
+      await queryClient.cancelQueries({ queryKey: remindersKey });
+      const previousReminders = queryClient.getQueryData<ReminderCacheItem[]>(remindersKey);
+      const optimisticReminder = buildOptimisticReminder({
+        date:
+          draft.repeatType === 'once'
+            ? (inputDateToIsoDate(draft.dateTexto) ?? undefined)
+            : undefined,
+        message: draft.textComando,
+        repeatType: draft.repeatType,
+        time: draft.horaTexto,
+        weekday: draft.repeatType === 'weekly' ? draft.weekday : undefined,
+      });
+
+      queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) => [
+        ...old,
+        optimisticReminder,
+      ]);
+
+      return { previousReminders };
+    },
+    onError: (_error, _draft, context) => {
+      if (context?.previousReminders) {
+        queryClient.setQueryData(reminderQueryKey(user?.uid), context.previousReminders);
+      }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Nao foi possivel salvar',
+        text2: 'Tente novamente em instantes.',
+        position: 'bottom',
+        bottomOffset: 140,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: dashboardQueryKey(user?.uid),
+        refetchType: 'all',
+      });
+
       router.back();
 
       Toast.show({
         type: 'success',
         text1: 'Lembrete criado',
         text2: 'Seu lembrete foi salvo com sucesso.',
-        position: 'bottom',
-        bottomOffset: 140,
-      });
-    },
-    onError: () => {
-      Toast.show({
-        type: 'error',
-        text1: 'Nao foi possivel salvar',
-        text2: 'Tente novamente em instantes.',
         position: 'bottom',
         bottomOffset: 140,
       });

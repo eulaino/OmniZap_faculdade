@@ -19,6 +19,7 @@ import { useFocusEffect } from 'expo-router';
 import { useBotHealth } from '@/hooks/useBotHealth';
 import { BotHealthBanner } from '@/components/BotHealthBanner';
 import Toast from 'react-native-toast-message';
+import { dashboardQueryKey, pendingActionsQueryKey } from '@/services/reminderQueries';
 
 export default function Home() {
   const [fontsLoaded] = useFonts({
@@ -64,15 +65,11 @@ export default function Home() {
       if (!user?.uid) return;
 
       queryClient.invalidateQueries({
-        queryKey: ['lembretes', user?.uid],
+        queryKey: dashboardQueryKey(user.uid),
       });
 
       queryClient.invalidateQueries({
-        queryKey: ['dashboard', user?.uid],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ['pendencias', user?.uid],
+        queryKey: pendingActionsQueryKey(user.uid),
       });
     }, [queryClient, user?.uid])
   );

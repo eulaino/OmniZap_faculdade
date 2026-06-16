@@ -8,6 +8,16 @@ import { auth } from '@/config/firebase';
 import { AcaoModal } from '@/modais/acaoModal';
 import { api } from '@/services/api';
 import {
+  removeReminderFromCache,
+  updateReminderInCache,
+  type ReminderCacheItem,
+} from '@/services/reminderCache';
+import {
+  APP_DATA_REFETCH_INTERVAL_MS,
+  dashboardQueryKey,
+  reminderQueryKey,
+} from '@/services/reminderQueries';
+import {
   buildReminderUpdatePayload,
   formatReminderSchedule,
   isoDateToInputDate,
@@ -16,9 +26,7 @@ import {
 } from '@/services/reminderEdit';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
 
-type LembretesProps = {
-  id: number | string;
-  message: string;
+type LembretesProps = ReminderCacheItem & {
   type?: string;
   date?: string;
   time?: string;
@@ -92,19 +100,21 @@ function ListaComandosComponent() {
   const queryClient = useQueryClient();
 
   const user = auth.currentUser;
+  const remindersKey = reminderQueryKey(user?.uid);
+  const dashboardKey = dashboardQueryKey(user?.uid);
 
   const {
     data: lembretes = [],
     isLoading,
     isError,
   } = useQuery<LembretesProps[]>({
-    queryKey: ['lembretes', user?.uid],
+    queryKey: remindersKey,
     queryFn: buscarLembretes,
     enabled: !!user?.uid,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnReconnect: true,
-    refetchInterval: 10000,
+    refetchInterval: APP_DATA_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
   });
 
@@ -115,28 +125,49 @@ function ListaComandosComponent() {
 
   const deleteMutation = useMutation({
     mutationFn: removerLembrete,
-    onSuccess: async (_, idRemovido) => {
-      queryClient.setQueryData<LembretesProps[]>(['lembretes', user?.uid], (old = []) =>
-        old.filter((item) => item.id !== idRemovido)
+    onMutate: async (idRemovido) => {
+      await queryClient.cancelQueries({ queryKey: remindersKey });
+      const previousReminders = queryClient.getQueryData<LembretesProps[]>(remindersKey);
+
+      queryClient.setQueryData<LembretesProps[]>(remindersKey, (old = []) =>
+        removeReminderFromCache(old, idRemovido)
       );
 
+      return { previousReminders };
+    },
+    onError: (_error, _idRemovido, context) => {
+      if (context?.previousReminders) {
+        queryClient.setQueryData(remindersKey, context.previousReminders);
+      }
+    },
+    onSuccess: async () => {
       await queryClient.refetchQueries({
-        queryKey: ['dashboard', user?.uid],
+        queryKey: dashboardKey,
       });
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: atualizarLembrete,
+    onMutate: async (update) => {
+      await queryClient.cancelQueries({ queryKey: remindersKey });
+      const previousReminders = queryClient.getQueryData<LembretesProps[]>(remindersKey);
+
+      queryClient.setQueryData<LembretesProps[]>(remindersKey, (old = []) =>
+        updateReminderInCache(old, update)
+      );
+
+      return { previousReminders };
+    },
+    onError: (_error, _update, context) => {
+      if (context?.previousReminders) {
+        queryClient.setQueryData(remindersKey, context.previousReminders);
+      }
+    },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.refetchQueries({
-          queryKey: ['lembretes', user?.uid],
-        }),
-        queryClient.refetchQueries({
-          queryKey: ['dashboard', user?.uid],
-        }),
-      ]);
+      await queryClient.refetchQueries({
+        queryKey: dashboardKey,
+      });
     },
   });
 
