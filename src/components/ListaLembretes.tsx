@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, ChevronRight } from 'lucide-react-native';
+import { BellRing, ChevronRight } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -26,6 +26,14 @@ import {
   type ReminderRepeatType,
 } from '@/services/reminderEdit';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
+
+const reminderCardShadow = {
+  shadowColor: '#191622',
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.055,
+  shadowRadius: 20,
+  elevation: 2,
+};
 
 type LembretesProps = ReminderCacheItem & {
   type?: string;
@@ -263,14 +271,16 @@ function ListaComandosComponent() {
   if (isLoading) {
     return (
       <View className="items-center py-6">
-        <ActivityIndicator size="small" color="#128C7E" />
+        <ActivityIndicator size="small" color="#6135E8" />
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View className="items-center rounded-2xl border border-red-200 bg-red-50 px-4 py-7">
+      <View
+        style={reminderCardShadow}
+        className="items-center rounded-2xl border border-red-100 bg-white px-4 py-7">
         <Text className="text-sm font-semibold text-red-700">Erro ao carregar lembretes</Text>
       </View>
     );
@@ -279,41 +289,44 @@ function ListaComandosComponent() {
   return (
     <View className="gap-3">
       {!lembretes.length ? (
-        <View className="items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7">
-          <Text className="text-sm font-semibold text-slate-700">Nenhum lembrete cadastrado</Text>
-          <Text className="mt-1 text-center text-xs leading-5 text-slate-500">
-            Toque em Novo para criar seu primeiro aviso no WhatsApp.
+        <View style={reminderCardShadow} className="items-center rounded-2xl bg-white px-4 py-7">
+          <Text className="text-sm font-semibold text-[#24252C]">Nenhum lembrete cadastrado</Text>
+          <Text className="mt-1 text-center text-xs leading-5 text-[#8B8D97]">
+            Use Novo lembrete para criar seu primeiro aviso no WhatsApp.
           </Text>
         </View>
       ) : (
         lembretes.map((item) => (
           <Pressable
             key={item.id}
-            className="flex-row items-center rounded-2xl border border-slate-200 bg-slate-50 p-4"
+            style={reminderCardShadow}
+            className="flex-row items-center rounded-2xl bg-white p-4"
             onPress={() => abrirLembrete(item)}>
-            <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50">
-              <Bot size={20} color="#128C7E" />
+            <View className="mr-4 h-11 w-11 items-center justify-center rounded-xl bg-[#E7F8F1]">
+              <BellRing size={20} color="#128C7E" />
             </View>
 
             <View className="flex-1">
               <View className="flex-row items-center justify-between">
-                <Text className="flex-1 pr-3 text-base font-bold text-slate-900" numberOfLines={1}>
+                <Text
+                  className="flex-1 pr-3 text-[15px] font-bold text-[#24252C]"
+                  numberOfLines={1}>
                   {item.message}
                 </Text>
 
-                <View className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
-                  <Text className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">
+                <View className="rounded-full bg-[#E7F8F1] px-2.5 py-1">
+                  <Text className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#128C7E]">
                     Ativo
                   </Text>
                 </View>
               </View>
 
-              <Text className="mt-1 text-sm text-slate-500" numberOfLines={1}>
+              <Text className="mt-1 text-[12px] text-[#8B8D97]" numberOfLines={1}>
                 {formatReminderSchedule(item)}
               </Text>
             </View>
 
-            <ChevronRight size={18} color="#94a3b8" />
+            <ChevronRight size={18} color="#C5C2CE" />
           </Pressable>
         ))
       )}
