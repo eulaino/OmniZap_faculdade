@@ -73,6 +73,13 @@ export function removeReminderFromCache(
   return reminders.filter((item) => !idsMatch(item.id, id));
 }
 
+export function addReminderToCache(
+  reminders: ReminderCacheItem[],
+  reminder: ReminderCacheItem
+): ReminderCacheItem[] {
+  return [...reminders, reminder];
+}
+
 export function updateReminderInCache(
   reminders: ReminderCacheItem[],
   update: ReminderCacheUpdate
@@ -80,4 +87,11 @@ export function updateReminderInCache(
   return reminders.map((item) =>
     idsMatch(item.id, update.id) ? applyReminderFields(item, update) : item
   );
+}
+
+export function restoreReminderCacheSnapshot<T extends ReminderCacheItem>(
+  currentReminders: T[],
+  previousReminders?: T[]
+): T[] {
+  return previousReminders ?? currentReminders.slice(0, 0);
 }

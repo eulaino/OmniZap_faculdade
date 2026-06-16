@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useFonts } from 'expo-font';
 import {
   View,
   Text,
@@ -22,11 +21,6 @@ import { Eyebrow } from '@/components/ui/Eyebrow';
 import { updateProfile } from 'firebase/auth';
 
 export default function Perfil() {
-  const [fontsLoaded] = useFonts({
-    SofiaProBold: require('../../assets/fonts/SofiaProBold.otf'),
-    SofiaProRegular: require('../../assets/fonts/SofiaProRegular.otf'),
-  });
-
   const user = auth.currentUser;
   const [userName, setUserName] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true); // 👈 adicionar
@@ -39,12 +33,13 @@ export default function Perfil() {
 
   useEffect(() => {
     if (user) {
-      get(dbRef(database, `users/${user.uid}/name`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          const val = snapshot.val();
-          setUserName(val.name ?? null);
-        }
-      })
+      get(dbRef(database, `users/${user.uid}/name`))
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            const val = snapshot.val();
+            setUserName(val.name ?? null);
+          }
+        })
         .finally(() => setLoadingUser(false));
     } else {
       setLoadingUser(false);
@@ -72,23 +67,22 @@ export default function Perfil() {
       });
 
       await set(dbRef(database, `users/${user.uid}/name`), {
-        name: nome.trim()
-      })
+        name: nome.trim(),
+      });
 
       setUserName(nome.trim());
       onClose();
-
     } catch (error) {
       console.log('Erro ao atualizar nome:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  if (!fontsLoaded) {
+  if (loadingUser) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 items-center justify-center bg-[#EAF7F1]">
+        <ActivityIndicator size="large" color="#128C7E" />
       </View>
     );
   }
@@ -107,15 +101,12 @@ export default function Perfil() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="pb-8 pt-5"
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <Atmosphere className="mx-4">
           <SurfaceCard>
             <Eyebrow>minha conta</Eyebrow>
 
-            <Text className="mt-2 text-3xl font-black leading-9 text-slate-900">
-              Perfil
-            </Text>
+            <Text className="mt-2 text-3xl font-black leading-9 text-slate-900">Perfil</Text>
 
             <Text className="mt-2 text-sm leading-5 text-slate-500">
               Centralize seus dados e acessos em uma experiencia limpa e organizada.
@@ -123,22 +114,28 @@ export default function Perfil() {
 
             <View className="mt-5 rounded-2xl border border-[#DCEAE5] bg-[#F7FCFA] p-4">
               {/* Botão Editar perfil */}
-              <Pressable className="flex-row items-center" onPress={() => { setNome(displayName); setVisible(true) }}>
+              <Pressable
+                className="flex-row items-center"
+                onPress={() => {
+                  setNome(displayName);
+                  setVisible(true);
+                }}>
                 <View
                   className="h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: avatarColor }}
-                >
-                  <Text style={{ fontFamily: 'SofiaProBold' }} className="text-2xl text-white">
+                  style={{ backgroundColor: avatarColor }}>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-2xl text-white">
                     {avatarLetter}
                   </Text>
                 </View>
 
                 <View className="ml-3 flex-1">
-                  <Text style={{ fontFamily: 'SofiaProBold' }} className="text-lg text-slate-900">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-lg text-slate-900">
                     {displayName}
                   </Text>
 
-                  <Text style={{ fontFamily: 'SofiaProRegular' }} className="mt-0.5 text-sm text-slate-500">
+                  <Text
+                    style={{ fontFamily: 'Inter_400Regular' }}
+                    className="mt-0.5 text-sm text-slate-500">
                     {accountEmail}
                   </Text>
 
@@ -153,36 +150,26 @@ export default function Perfil() {
           </SurfaceCard>
         </Atmosphere>
 
-        <IndicarModal userName={userName} modalVisible={modalVisible} onSetVisible={setModalVisible} />
+        <IndicarModal
+          userName={userName}
+          modalVisible={modalVisible}
+          onSetVisible={setModalVisible}
+        />
         <MenuPerfil userName={userName} />
       </ScrollView>
 
-{/* Modal Editar Nome */}
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={onClose}
-      >
+      {/* Modal Editar Nome */}
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <View className="flex-1 items-center justify-center bg-black/60 px-6">
-          <Pressable
-            className="absolute inset-0"
-            onPress={onClose}
-          />
+          <Pressable className="absolute inset-0" onPress={onClose} />
 
           <View className="w-full rounded-3xl bg-white p-6">
-            <Text className="text-xl font-bold text-slate-900">
-              Editar perfil
-            </Text>
+            <Text className="text-xl font-bold text-slate-900">Editar perfil</Text>
 
-            <Text className="mt-2 text-sm text-slate-500">
-              Altere seu nome de exibição.
-            </Text>
+            <Text className="mt-2 text-sm text-slate-500">Altere seu nome de exibição.</Text>
 
             <View className="mt-5">
-              <Text className="mb-2 text-sm font-semibold text-slate-700">
-                Nome
-              </Text>
+              <Text className="mb-2 text-sm font-semibold text-slate-700">Nome</Text>
 
               <TextInput
                 value={nome}
@@ -194,25 +181,17 @@ export default function Perfil() {
             </View>
 
             <View className="mt-6 flex-row gap-3">
-              <TouchableOpacity
-                onPress={onClose}
-                className="flex-1 rounded-2xl bg-slate-100 py-4"
-              >
-                <Text className="text-center font-semibold text-slate-700">
-                  Cancelar
-                </Text>
+              <TouchableOpacity onPress={onClose} className="flex-1 rounded-2xl bg-slate-100 py-4">
+                <Text className="text-center font-semibold text-slate-700">Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={salvarNome}
-                className="flex-1 rounded-2xl bg-orange-500 py-4"
-              >
+                className="flex-1 rounded-2xl bg-orange-500 py-4">
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text className="text-center font-semibold text-white">
-                    Salvar
-                  </Text>
+                  <Text className="text-center font-semibold text-white">Salvar</Text>
                 )}
               </TouchableOpacity>
             </View>

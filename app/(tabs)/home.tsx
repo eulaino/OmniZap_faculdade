@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { auth, database } from '@/config/firebase';
-import { useFonts } from 'expo-font';
 import { HeaderListComando } from '@/components/HeaderListComando';
 import { ListaComandos } from '@/components/ListaLembretes';
 import { Dashboard } from '@/components/Dashboard';
@@ -22,11 +21,6 @@ import Toast from 'react-native-toast-message';
 import { dashboardQueryKey, pendingActionsQueryKey } from '@/services/reminderQueries';
 
 export default function Home() {
-  const [fontsLoaded] = useFonts({
-    SofiaProBold: require('../../assets/fonts/SofiaProBold.otf'),
-    SofiaProRegular: require('../../assets/fonts/SofiaProRegular.otf'),
-  });
-
   const user = auth.currentUser;
   const [userName, setUserName] = useState('');
   const [loadingName, setLoadingName] = useState(true);
@@ -115,7 +109,7 @@ export default function Home() {
       setRefreshKey((prev) => prev + 1);
     }, []); */
 
-  if (!fontsLoaded || loadingName || isLoading) {
+  if (loadingName || isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-[#EAF7F1]">
         <ActivityIndicator size="large" color="#22c55e" />

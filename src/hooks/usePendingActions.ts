@@ -4,9 +4,15 @@ import Toast from 'react-native-toast-message';
 import { auth } from '@/config/firebase';
 import { api } from '@/services/api';
 import {
+  addReminderToCache,
+  buildOptimisticReminder,
+  restoreReminderCacheSnapshot,
+  type ReminderCacheItem,
+} from '@/services/reminderCache';
+import {
   APP_DATA_REFETCH_INTERVAL_MS,
-  dashboardQueryKey,
   pendingActionsQueryKey,
+  refreshReminderAppData,
   reminderQueryKey,
 } from '@/services/reminderQueries';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
@@ -73,12 +79,17 @@ async function cancelarPendencia(id: number) {
   return response.data;
 }
 
+function pendingActionCreatedAt(createdAt: string) {
+  const date = new Date(createdAt);
+
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
 export function usePendingActions() {
   const user = auth.currentUser;
   const queryClient = useQueryClient();
   const pendingKey = pendingActionsQueryKey(user?.uid);
   const remindersKey = reminderQueryKey(user?.uid);
-  const dashboardKey = dashboardQueryKey(user?.uid);
 
   const query = useQuery<PendingAction[]>({
     queryKey: pendingKey,
@@ -91,18 +102,61 @@ export function usePendingActions() {
     refetchIntervalInBackground: false,
   });
 
-  const invalidateAppData = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: pendingKey }),
-      queryClient.invalidateQueries({ queryKey: remindersKey }),
-      queryClient.invalidateQueries({ queryKey: dashboardKey }),
-    ]);
-  };
-
   const confirmMutation = useMutation({
     mutationFn: confirmarPendencia,
+    onMutate: async (id) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: pendingKey }),
+        queryClient.cancelQueries({ queryKey: remindersKey }),
+      ]);
+
+      const previousPending = queryClient.getQueryData<PendingAction[]>(pendingKey);
+      const previousReminders = queryClient.getQueryData<ReminderCacheItem[]>(remindersKey);
+      const pendingAction = previousPending?.find((action) => action.id === id);
+
+      queryClient.setQueryData<PendingAction[]>(pendingKey, (old = []) =>
+        old.filter((action) => action.id !== id)
+      );
+
+      if (pendingAction) {
+        const optimisticReminder = buildOptimisticReminder(
+          {
+            date: pendingAction.payload.date,
+            message: pendingAction.payload.message,
+            repeatType: 'once',
+            time: pendingAction.payload.time,
+          },
+          pendingActionCreatedAt(pendingAction.created_at)
+        );
+
+        queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) =>
+          addReminderToCache(old, optimisticReminder)
+        );
+      }
+
+      return { previousPending, previousReminders };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousPending) {
+        queryClient.setQueryData(pendingKey, context.previousPending);
+      }
+
+      queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) =>
+        restoreReminderCacheSnapshot(old, context?.previousReminders)
+      );
+
+      Toast.show({
+        type: 'error',
+        text1: 'Nao foi possivel confirmar',
+        text2: 'Tente novamente em instantes.',
+        position: 'bottom',
+        bottomOffset: 140,
+      });
+    },
     onSuccess: async () => {
-      await invalidateAppData();
+      await refreshReminderAppData(queryClient, user?.uid, {
+        includePendingActions: true,
+      });
 
       Toast.show({
         type: 'success',
@@ -112,34 +166,44 @@ export function usePendingActions() {
         bottomOffset: 140,
       });
     },
-    onError: () => {
-      Toast.show({
-        type: 'error',
-        text1: 'Nao foi possivel confirmar',
-        text2: 'Tente novamente em instantes.',
-        position: 'bottom',
-        bottomOffset: 140,
-      });
-    },
   });
 
   const cancelMutation = useMutation({
     mutationFn: cancelarPendencia,
-    onSuccess: async () => {
-      await invalidateAppData();
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: pendingKey });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Pendencia cancelada',
-        position: 'bottom',
-        bottomOffset: 140,
-      });
+      const previousPending = queryClient.getQueryData<PendingAction[]>(pendingKey);
+
+      queryClient.setQueryData<PendingAction[]>(pendingKey, (old = []) =>
+        old.filter((action) => action.id !== id)
+      );
+
+      return { previousPending };
     },
-    onError: () => {
+    onError: (_error, _id, context) => {
+      if (context?.previousPending) {
+        queryClient.setQueryData(pendingKey, context.previousPending);
+      }
+
       Toast.show({
         type: 'error',
         text1: 'Nao foi possivel cancelar',
         text2: 'Tente novamente em instantes.',
+        position: 'bottom',
+        bottomOffset: 140,
+      });
+    },
+    onSuccess: async () => {
+      await refreshReminderAppData(queryClient, user?.uid, {
+        includeDashboard: false,
+        includePendingActions: true,
+        includeReminders: false,
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Pendencia cancelada',
         position: 'bottom',
         bottomOffset: 140,
       });

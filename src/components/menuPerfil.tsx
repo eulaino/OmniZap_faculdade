@@ -31,20 +31,18 @@ function MenuRow({ icon, title, subtitle, badge, danger, onPress }: MenuRowProps
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className="flex-row items-center justify-between px-4 py-3.5"
-    >
+      className="flex-row items-center justify-between px-4 py-3.5">
       <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
         <Ionicons name={icon} size={20} color={iconColor} />
       </View>
 
       <View className="flex-1">
         <Text
-          style={{ fontFamily: 'SofiaProBold' }}
-          className={danger ? 'text-lg text-emerald-700' : 'text-lg text-slate-900'}
-        >
+          style={{ fontFamily: 'Inter_700Bold' }}
+          className={danger ? 'text-lg text-emerald-700' : 'text-lg text-slate-900'}>
           {title}
         </Text>
-        <Text style={{ fontFamily: 'SofiaProRegular' }} className="mt-0.5 text-xs text-slate-500">
+        <Text style={{ fontFamily: 'Inter_400Regular' }} className="mt-0.5 text-xs text-slate-500">
           {subtitle}
         </Text>
       </View>
@@ -52,7 +50,9 @@ function MenuRow({ icon, title, subtitle, badge, danger, onPress }: MenuRowProps
       <View className="ml-3 flex-row items-center">
         {badge ? (
           <View className="mr-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5">
-            <Text style={{ fontFamily: 'SofiaProBold' }} className="text-[10px] uppercase text-emerald-700">
+            <Text
+              style={{ fontFamily: 'Inter_700Bold' }}
+              className="text-[10px] uppercase text-emerald-700">
               {badge}
             </Text>
           </View>
@@ -69,12 +69,8 @@ function Divider() {
 
 export function MenuPerfil({ userName }: ModalProps) {
   return (
-    <View className="mx-4 mt-4 mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white">
-      <MenuRow
-        icon="chatbubbles-outline"
-        title="Chats"
-        subtitle="Minhas conversas"
-      />
+    <View className="mx-4 mb-8 mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+      <MenuRow icon="chatbubbles-outline" title="Chats" subtitle="Minhas conversas" />
       <Divider />
 
       <MenuRow
@@ -95,11 +91,7 @@ export function MenuPerfil({ userName }: ModalProps) {
       />
       <Divider />
 
-      <MenuRow
-        icon="pricetag-outline"
-        title="Cupons"
-        subtitle="Meus cupons de desconto"
-      />
+      <MenuRow icon="pricetag-outline" title="Cupons" subtitle="Meus cupons de desconto" />
       <Divider />
 
       <MenuRow

@@ -1,17 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StatusBar,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Modal, Pressable, StatusBar, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -21,8 +12,13 @@ import { Eyebrow } from '@/components/ui/Eyebrow';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { api } from '@/services/api';
 import { auth } from '@/config/firebase';
-import { buildOptimisticReminder, type ReminderCacheItem } from '@/services/reminderCache';
-import { dashboardQueryKey, reminderQueryKey } from '@/services/reminderQueries';
+import {
+  addReminderToCache,
+  buildOptimisticReminder,
+  restoreReminderCacheSnapshot,
+  type ReminderCacheItem,
+} from '@/services/reminderCache';
+import { refreshReminderAppData, reminderQueryKey } from '@/services/reminderQueries';
 import {
   WEEKDAY_OPTIONS,
   addDaysToInputDate,
@@ -97,10 +93,6 @@ async function criarLembreteApi({
 }
 
 export default function CriarComando() {
-  const [fontsLoaded] = useFonts({
-    SofiaProBold: require('../assets/fonts/SofiaProBold.otf'),
-    SofiaProRegular: require('../assets/fonts/SofiaProRegular.otf'),
-  });
   const [textComando, setTextComando] = useState('');
   const [horaTexto, setHoraTexto] = useState('');
   const [dateTexto, setDateTexto] = useState(addDaysToInputDate(0));
@@ -137,17 +129,16 @@ export default function CriarComando() {
         weekday: draft.repeatType === 'weekly' ? draft.weekday : undefined,
       });
 
-      queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) => [
-        ...old,
-        optimisticReminder,
-      ]);
+      queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) =>
+        addReminderToCache(old, optimisticReminder)
+      );
 
       return { previousReminders };
     },
     onError: (_error, _draft, context) => {
-      if (context?.previousReminders) {
-        queryClient.setQueryData(reminderQueryKey(user?.uid), context.previousReminders);
-      }
+      queryClient.setQueryData<ReminderCacheItem[]>(reminderQueryKey(user?.uid), (old = []) =>
+        restoreReminderCacheSnapshot(old, context?.previousReminders)
+      );
 
       Toast.show({
         type: 'error',
@@ -157,13 +148,11 @@ export default function CriarComando() {
         bottomOffset: 140,
       });
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: dashboardQueryKey(user?.uid),
-        refetchType: 'all',
-      });
-
+    onSuccess: () => {
       router.back();
+      void refreshReminderAppData(queryClient, user?.uid).catch((error) => {
+        console.log('Erro ao atualizar lembretes apos criar:', error);
+      });
 
       Toast.show({
         type: 'success',
@@ -221,14 +210,6 @@ export default function CriarComando() {
     setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
   }
 
-  if (!fontsLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center bg-[#EAF7F1]">
-        <ActivityIndicator size="large" color="#128C7E" />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView className="flex-1 bg-[#EAF7F1]" edges={['top']}>
       <StatusBar backgroundColor="#EAF7F1" barStyle="dark-content" />
@@ -257,7 +238,7 @@ export default function CriarComando() {
 
               <View className="rounded-full border border-[#D8E8E1] bg-[#F8FCFA] px-3 py-1.5">
                 <Text
-                  style={{ fontFamily: 'SofiaProBold' }}
+                  style={{ fontFamily: 'Inter_700Bold' }}
                   className="text-[10px] uppercase tracking-[0.16em] text-[#4B675E]">
                   novo lembrete
                 </Text>
@@ -268,13 +249,13 @@ export default function CriarComando() {
               <Eyebrow>automacao</Eyebrow>
 
               <Text
-                style={{ fontFamily: 'SofiaProBold' }}
+                style={{ fontFamily: 'Inter_700Bold' }}
                 className="mt-3 text-[32px] leading-9 text-slate-900">
                 Criar lembrete
               </Text>
 
               <Text
-                style={{ fontFamily: 'SofiaProRegular' }}
+                style={{ fontFamily: 'Inter_400Regular' }}
                 className="mt-3 text-[15px] leading-6 text-slate-500">
                 Escolha quando lembrar e o que o bot deve enviar.
               </Text>
@@ -291,7 +272,7 @@ export default function CriarComando() {
 
                   <View className="ml-3 flex-1">
                     <Text
-                      style={{ fontFamily: 'SofiaProBold' }}
+                      style={{ fontFamily: 'Inter_700Bold' }}
                       className="text-base text-slate-900">
                       Quando lembrar
                     </Text>
@@ -312,7 +293,7 @@ export default function CriarComando() {
                           selected ? 'bg-[#128C7E]' : 'bg-transparent'
                         }`}>
                         <Text
-                          style={{ fontFamily: 'SofiaProBold' }}
+                          style={{ fontFamily: 'Inter_700Bold' }}
                           className={`text-xs ${selected ? 'text-white' : 'text-slate-600'}`}>
                           {option.label}
                         </Text>
@@ -350,14 +331,14 @@ export default function CriarComando() {
                         }
                         keyboardType="numeric"
                         maxLength={10}
-                        style={{ fontFamily: 'SofiaProRegular' }}
+                        style={{ fontFamily: 'Inter_400Regular' }}
                         className="ml-2 flex-1 py-3.5 text-[15px] text-slate-900"
                       />
 
                       {selectedWeekdayLabel ? (
                         <View className="rounded-full border border-[#D8E8E1] bg-[#F8FCFA] px-2.5 py-1.5">
                           <Text
-                            style={{ fontFamily: 'SofiaProBold' }}
+                            style={{ fontFamily: 'Inter_700Bold' }}
                             className="text-[11px] text-[#4B675E]">
                             {selectedWeekdayLabel}
                           </Text>
@@ -371,7 +352,7 @@ export default function CriarComando() {
                         className="ml-2 flex-row items-center rounded-full bg-[#F1FAF6] px-3 py-2">
                         <Ionicons name="calendar-number-outline" size={15} color="#128C7E" />
                         <Text
-                          style={{ fontFamily: 'SofiaProBold' }}
+                          style={{ fontFamily: 'Inter_700Bold' }}
                           className="ml-1.5 text-xs text-[#128C7E]">
                           Calendario
                         </Text>
@@ -379,7 +360,7 @@ export default function CriarComando() {
                     </View>
 
                     <Text
-                      style={{ fontFamily: 'SofiaProRegular' }}
+                      style={{ fontFamily: 'Inter_400Regular' }}
                       className="mt-3 text-xs text-slate-500">
                       {selectedDateSummary
                         ? `Selecionado: ${selectedDateSummary}`
@@ -404,14 +385,14 @@ export default function CriarComando() {
                                 : 'border-[#E2ECE7] bg-white'
                             }`}>
                             <Text
-                              style={{ fontFamily: 'SofiaProBold' }}
+                              style={{ fontFamily: 'Inter_700Bold' }}
                               className={`text-center text-sm ${
                                 selected ? 'text-emerald-700' : 'text-slate-700'
                               }`}>
                               {option.label}
                             </Text>
                             <Text
-                              style={{ fontFamily: 'SofiaProRegular' }}
+                              style={{ fontFamily: 'Inter_400Regular' }}
                               className={`mt-0.5 text-center text-[11px] ${
                                 selected ? 'text-emerald-700' : 'text-slate-500'
                               }`}>
@@ -437,12 +418,12 @@ export default function CriarComando() {
                           <View className="overflow-hidden rounded-[28px] border border-[#D8E8E1] bg-white">
                             <View className="border-b border-[#E7F0EB] px-5 py-4">
                               <Text
-                                style={{ fontFamily: 'SofiaProBold' }}
+                                style={{ fontFamily: 'Inter_700Bold' }}
                                 className="text-base text-slate-900">
                                 Escolher data
                               </Text>
                               <Text
-                                style={{ fontFamily: 'SofiaProRegular' }}
+                                style={{ fontFamily: 'Inter_400Regular' }}
                                 className="mt-1 text-xs text-slate-500">
                                 Selecione quando o bot deve lembrar.
                               </Text>
@@ -459,7 +440,7 @@ export default function CriarComando() {
                                 </Pressable>
 
                                 <Text
-                                  style={{ fontFamily: 'SofiaProBold' }}
+                                  style={{ fontFamily: 'Inter_700Bold' }}
                                   className="text-base capitalize text-slate-900">
                                   {calendarMonthTitle}
                                 </Text>
@@ -477,7 +458,7 @@ export default function CriarComando() {
                                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].map((day) => (
                                   <Text
                                     key={day}
-                                    style={{ fontFamily: 'SofiaProBold' }}
+                                    style={{ fontFamily: 'Inter_700Bold' }}
                                     className="flex-1 text-center text-[11px] text-slate-500">
                                     {day}
                                   </Text>
@@ -509,7 +490,7 @@ export default function CriarComando() {
                                               : 'bg-white'
                                         }`}>
                                         <Text
-                                          style={{ fontFamily: 'SofiaProBold' }}
+                                          style={{ fontFamily: 'Inter_700Bold' }}
                                           className={`text-sm ${
                                             selected
                                               ? 'text-white'
@@ -522,7 +503,7 @@ export default function CriarComando() {
                                           {day.day}
                                         </Text>
                                         <Text
-                                          style={{ fontFamily: 'SofiaProRegular' }}
+                                          style={{ fontFamily: 'Inter_400Regular' }}
                                           className={`mt-0.5 text-[9px] ${
                                             selected
                                               ? 'text-white'
@@ -541,7 +522,7 @@ export default function CriarComando() {
                               {selectedDateSummary ? (
                                 <View className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                                   <Text
-                                    style={{ fontFamily: 'SofiaProBold' }}
+                                    style={{ fontFamily: 'Inter_700Bold' }}
                                     className="text-sm text-slate-900">
                                     {selectedDateSummary}
                                   </Text>
@@ -556,7 +537,7 @@ export default function CriarComando() {
                                 accessibilityLabel="Cancelar escolha de data"
                                 className="flex-1 items-center rounded-2xl border border-slate-300 bg-slate-100 py-3">
                                 <Text
-                                  style={{ fontFamily: 'SofiaProBold' }}
+                                  style={{ fontFamily: 'Inter_700Bold' }}
                                   className="text-sm text-slate-700">
                                   Cancelar
                                 </Text>
@@ -568,7 +549,7 @@ export default function CriarComando() {
                                 accessibilityLabel="Concluir escolha de data"
                                 className="flex-1 items-center rounded-2xl bg-[#128C7E] py-3">
                                 <Text
-                                  style={{ fontFamily: 'SofiaProBold' }}
+                                  style={{ fontFamily: 'Inter_700Bold' }}
                                   className="text-sm text-white">
                                   Concluir
                                 </Text>
@@ -581,7 +562,7 @@ export default function CriarComando() {
 
                     {dataInvalida ? (
                       <Text
-                        style={{ fontFamily: 'SofiaProBold' }}
+                        style={{ fontFamily: 'Inter_700Bold' }}
                         className="mt-3 text-xs text-red-500">
                         Digite uma data valida.
                       </Text>
@@ -606,7 +587,7 @@ export default function CriarComando() {
                               : 'border-[#E2ECE7] bg-white'
                           }`}>
                           <Text
-                            style={{ fontFamily: 'SofiaProBold' }}
+                            style={{ fontFamily: 'Inter_700Bold' }}
                             className={`text-sm ${selected ? 'text-emerald-700' : 'text-slate-700'}`}>
                             {option.shortLabel}
                           </Text>
@@ -625,7 +606,7 @@ export default function CriarComando() {
 
                   <View className="ml-3 flex-1">
                     <Text
-                      style={{ fontFamily: 'SofiaProBold' }}
+                      style={{ fontFamily: 'Inter_700Bold' }}
                       className="text-base text-slate-900">
                       Horario
                     </Text>
@@ -657,7 +638,7 @@ export default function CriarComando() {
                     }
                     keyboardType="numeric"
                     maxLength={5}
-                    style={{ fontFamily: 'SofiaProRegular' }}
+                    style={{ fontFamily: 'Inter_400Regular' }}
                     className="ml-2 flex-1 py-3.5 text-[15px] text-slate-900"
                   />
                 </View>
@@ -678,7 +659,7 @@ export default function CriarComando() {
                             : 'border-[#E2ECE7] bg-white'
                         }`}>
                         <Text
-                          style={{ fontFamily: 'SofiaProBold' }}
+                          style={{ fontFamily: 'Inter_700Bold' }}
                           className={`text-base ${selecionado ? 'text-emerald-700' : 'text-slate-700'}`}>
                           {horario}
                         </Text>
@@ -689,7 +670,7 @@ export default function CriarComando() {
 
                 {horaInvalida ? (
                   <Text
-                    style={{ fontFamily: 'SofiaProBold' }}
+                    style={{ fontFamily: 'Inter_700Bold' }}
                     className="mt-3 text-xs text-red-500">
                     Digite um horario valido entre 00:00 e 23:59.
                   </Text>
@@ -704,7 +685,7 @@ export default function CriarComando() {
 
                   <View className="ml-3 flex-1">
                     <Text
-                      style={{ fontFamily: 'SofiaProBold' }}
+                      style={{ fontFamily: 'Inter_700Bold' }}
                       className="text-base text-slate-900">
                       O que lembrar
                     </Text>
@@ -730,14 +711,14 @@ export default function CriarComando() {
                     onBlur={() =>
                       setCampoFocado((valorAtual) => (valorAtual === 'comando' ? null : valorAtual))
                     }
-                    style={{ fontFamily: 'SofiaProRegular' }}
+                    style={{ fontFamily: 'Inter_400Regular' }}
                     className="py-3.5 text-[15px] text-slate-900"
                   />
                 </View>
 
                 {comandoComHorario ? (
                   <Text
-                    style={{ fontFamily: 'SofiaProBold' }}
+                    style={{ fontFamily: 'Inter_700Bold' }}
                     className="mt-3 text-xs text-red-500">
                     Remova o horario da mensagem. Use apenas o campo Horario.
                   </Text>
@@ -753,7 +734,7 @@ export default function CriarComando() {
                   podeEnviar ? 'bg-[#128C7E]' : 'bg-slate-200'
                 }`}>
                 <Text
-                  style={{ fontFamily: 'SofiaProBold' }}
+                  style={{ fontFamily: 'Inter_700Bold' }}
                   className={`text-base ${podeEnviar ? 'text-white' : 'text-slate-500'}`}>
                   {createMutation.isPending ? 'Salvando...' : 'Criar lembrete'}
                 </Text>

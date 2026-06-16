@@ -9,12 +9,13 @@ import { AcaoModal } from '@/modais/acaoModal';
 import { api } from '@/services/api';
 import {
   removeReminderFromCache,
+  restoreReminderCacheSnapshot,
   updateReminderInCache,
   type ReminderCacheItem,
 } from '@/services/reminderCache';
 import {
   APP_DATA_REFETCH_INTERVAL_MS,
-  dashboardQueryKey,
+  refreshReminderAppData,
   reminderQueryKey,
 } from '@/services/reminderQueries';
 import {
@@ -101,7 +102,6 @@ function ListaComandosComponent() {
 
   const user = auth.currentUser;
   const remindersKey = reminderQueryKey(user?.uid);
-  const dashboardKey = dashboardQueryKey(user?.uid);
 
   const {
     data: lembretes = [],
@@ -136,14 +136,12 @@ function ListaComandosComponent() {
       return { previousReminders };
     },
     onError: (_error, _idRemovido, context) => {
-      if (context?.previousReminders) {
-        queryClient.setQueryData(remindersKey, context.previousReminders);
-      }
+      queryClient.setQueryData<LembretesProps[]>(remindersKey, (old = []) =>
+        restoreReminderCacheSnapshot(old, context?.previousReminders)
+      );
     },
     onSuccess: async () => {
-      await queryClient.refetchQueries({
-        queryKey: dashboardKey,
-      });
+      await refreshReminderAppData(queryClient, user?.uid);
     },
   });
 
@@ -160,14 +158,12 @@ function ListaComandosComponent() {
       return { previousReminders };
     },
     onError: (_error, _update, context) => {
-      if (context?.previousReminders) {
-        queryClient.setQueryData(remindersKey, context.previousReminders);
-      }
+      queryClient.setQueryData<LembretesProps[]>(remindersKey, (old = []) =>
+        restoreReminderCacheSnapshot(old, context?.previousReminders)
+      );
     },
     onSuccess: async () => {
-      await queryClient.refetchQueries({
-        queryKey: dashboardKey,
-      });
+      await refreshReminderAppData(queryClient, user?.uid);
     },
   });
 
