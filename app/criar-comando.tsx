@@ -41,25 +41,8 @@ function horaValida(texto: string) {
     return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
 }
 
-function formatarDataLocal(data: Date) {
-    const ano = data.getFullYear();
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const dia = String(data.getDate()).padStart(2, '0');
-
-    return `${ano}-${mes}-${dia}`;
-}
-
-function calcularProximaData(horaTexto: string) {
-    const [hh, mm] = horaTexto.split(':').map(Number);
-    const dataLembrete = new Date();
-
-    dataLembrete.setHours(hh, mm, 0, 0);
-
-    if (dataLembrete.getTime() <= Date.now()) {
-        dataLembrete.setDate(dataLembrete.getDate() + 1);
-    }
-
-    return formatarDataLocal(dataLembrete);
+function mensagemTemHorario(texto: string) {
+    return /\b(?:[01]?\d|2[0-3])(?::[0-5]\d|h(?:[0-5]\d)?)\b/i.test(texto);
 }
 
 async function criarLembreteApi({ horaTexto, textComando }: CriarLembreteParams) {
@@ -67,9 +50,7 @@ async function criarLembreteApi({ horaTexto, textComando }: CriarLembreteParams)
 
     await api.post('/api/lembrete', {
         numero,
-        date: calcularProximaData(horaTexto),
-        time: horaTexto,
-        message: textComando.trim(),
+        mensagem: `lembrar ${horaTexto} ${textComando.trim()}`,
     });
 }
 
@@ -108,13 +89,26 @@ export default function CriarComando() {
     });
 
     const comandoPreenchido = textComando.trim();
+    const comandoComHorario = mensagemTemHorario(comandoPreenchido);
     const horaInvalida = horaTexto.length === 5 && !horaValida(horaTexto);
     const podeEnviar =
         comandoPreenchido.length > 0 &&
+        !comandoComHorario &&
         horaValida(horaTexto) &&
         !createMutation.isPending;
 
     async function criarLembrete() {
+        if (comandoComHorario) {
+            Toast.show({
+                type: 'error',
+                text1: 'Horario duplicado',
+                text2: 'Coloque o horario apenas no campo de horario.',
+                position: 'bottom',
+                bottomOffset: 140,
+            });
+            return;
+        }
+
         if (!podeEnviar) return;
 
         await createMutation.mutateAsync({
@@ -215,9 +209,11 @@ export default function CriarComando() {
                                 </View>
 
                                 <View
-                                    className={`mt-4 rounded-[24px] border px-4 py-1 ${campoFocado === 'comando'
-                                        ? 'border-emerald-500 bg-white'
-                                        : 'border-[#E2ECE7] bg-white'
+                                    className={`mt-4 rounded-[24px] border px-4 py-1 ${comandoComHorario
+                                        ? 'border-red-400 bg-red-50'
+                                        : campoFocado === 'comando'
+                                            ? 'border-emerald-500 bg-white'
+                                            : 'border-[#E2ECE7] bg-white'
                                         }`}
                                 >
                                     <TextInput
@@ -237,6 +233,15 @@ export default function CriarComando() {
                                         className="py-3.5 text-[15px] text-slate-900"
                                     />
                                 </View>
+
+                                {comandoComHorario ? (
+                                    <Text
+                                        style={{ fontFamily: 'SofiaProBold' }}
+                                        className="mt-3 text-xs text-red-500"
+                                    >
+                                        Remova o horario da mensagem. Use apenas o campo Horario.
+                                    </Text>
+                                ) : null}
                             </View>
 
                             <View className="mt-4 rounded-[26px] border border-[#E7F0EB] bg-[#FCFDFC] p-4">
