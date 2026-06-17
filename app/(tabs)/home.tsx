@@ -149,11 +149,15 @@ function FilterChip({ label, onPress, selected }: FilterChipProps) {
 
 type AgendaSummaryProps = {
   isFetching: boolean;
-  totalNotifications: number;
+  totalPendingConfirmations: number;
   totalReminders: number;
 };
 
-function AgendaSummary({ isFetching, totalNotifications, totalReminders }: AgendaSummaryProps) {
+function formatPendingConfirmationLabel(total: number) {
+  return `${formatMetric(total)} ${total === 1 ? 'lembrete' : 'lembretes'} aguardando confirmacao no WhatsApp`;
+}
+
+function AgendaSummary({ isFetching, totalPendingConfirmations, totalReminders }: AgendaSummaryProps) {
   return (
     <View className="mt-6 rounded-2xl bg-white px-4 py-3" style={surfaceShadow}>
       <Text style={homeFonts.bold} className="text-[13px] text-[#24252C]">
@@ -162,7 +166,7 @@ function AgendaSummary({ isFetching, totalNotifications, totalReminders }: Agend
       <Text style={homeFonts.medium} className="mt-1 text-[12px] text-[#8B8D97]">
         {isFetching
           ? 'Atualizando dados do WhatsApp...'
-          : `${formatMetric(totalNotifications)} avisos enviados pelo WhatsApp`}
+          : formatPendingConfirmationLabel(totalPendingConfirmations)}
       </Text>
     </View>
   );
@@ -226,7 +230,7 @@ export default function Home() {
 
   const botOffline = botHealth?.state === 'offline';
   const totalReminders = data?.total_comandos ?? 0;
-  const totalNotifications = data?.total_atendimentos ?? 0;
+  const totalPendingConfirmations = data?.total_aguardando_confirmacao ?? 0;
   const displayName = userName || user?.displayName || 'Voce';
   const avatarLetter = displayName[0]?.toUpperCase() ?? 'O';
   const hasAlert = botOffline || !!pendingAction || isError;
@@ -341,7 +345,7 @@ export default function Home() {
 
           <AgendaSummary
             isFetching={isDashboardFetching}
-            totalNotifications={totalNotifications}
+            totalPendingConfirmations={totalPendingConfirmations}
             totalReminders={totalReminders}
           />
 
