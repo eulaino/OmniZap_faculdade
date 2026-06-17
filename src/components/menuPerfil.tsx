@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import type { ComponentProps } from 'react';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 type ModalProps = {
   userName: string | null;
@@ -19,79 +19,82 @@ type MenuRowProps = {
   onPress?: () => void;
 };
 
+const fonts = {
+  regular: { fontFamily: 'Inter_400Regular' },
+  medium: { fontFamily: 'Inter_500Medium' },
+  bold: { fontFamily: 'Inter_700Bold' },
+};
+
 async function handleLogout() {
   await signOut(auth);
   router.replace('/(auth)/login');
 }
 
 function MenuRow({ icon, title, subtitle, badge, danger, onPress }: MenuRowProps) {
-  const iconColor = danger ? '#0F766E' : '#0f172a';
+  const iconColor = danger ? '#E11D48' : '#128C7E';
+  const iconBg = danger ? 'bg-red-50' : 'bg-[#E7F8F1]';
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.8}
-      className="flex-row items-center justify-between px-4 py-3.5">
-      <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      className="flex-row items-center px-4 py-4">
+      <View className={`mr-3 h-11 w-11 items-center justify-center rounded-[18px] ${iconBg}`}>
         <Ionicons name={icon} size={20} color={iconColor} />
       </View>
 
       <View className="flex-1">
-        <Text
-          style={{ fontFamily: 'Inter_700Bold' }}
-          className={danger ? 'text-lg text-emerald-700' : 'text-lg text-slate-900'}>
-          {title}
-        </Text>
-        <Text style={{ fontFamily: 'Inter_400Regular' }} className="mt-0.5 text-xs text-slate-500">
+        <View className="flex-row items-center">
+          <Text
+            style={fonts.bold}
+            className={`text-[15px] ${danger ? 'text-red-600' : 'text-[#24252C]'}`}>
+            {title}
+          </Text>
+
+          {badge ? (
+            <View className="ml-2 rounded-full bg-[#EEE7FF] px-2 py-0.5">
+              <Text style={fonts.bold} className="text-[10px] text-[#6135E8]">
+                {badge}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <Text style={fonts.medium} className="mt-0.5 text-[12px] text-[#8B8D97]">
           {subtitle}
         </Text>
       </View>
 
-      <View className="ml-3 flex-row items-center">
-        {badge ? (
-          <View className="mr-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5">
-            <Text
-              style={{ fontFamily: 'Inter_700Bold' }}
-              className="text-[10px] uppercase text-emerald-700">
-              {badge}
-            </Text>
-          </View>
-        ) : null}
-        <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
-      </View>
-    </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={18} color="#B4B8C2" />
+    </Pressable>
   );
 }
 
 function Divider() {
-  return <View className="mx-4 h-px bg-slate-200" />;
+  return <View className="mx-4 h-px bg-[#EEF1F4]" />;
 }
 
 export function MenuPerfil({ userName }: ModalProps) {
   return (
-    <View className="mx-4 mb-8 mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+    <View className="overflow-hidden rounded-[28px] bg-white">
       <MenuRow icon="chatbubbles-outline" title="Chats" subtitle="Minhas conversas" />
       <Divider />
 
       <MenuRow
         icon="notifications-outline"
         title="Notificacoes"
-        subtitle="Meus lembretes no WhatsApp"
+        subtitle="Lembretes enviados no WhatsApp"
       />
       <Divider />
 
       <CarteiraModal userName={userName} />
       <Divider />
 
-      <MenuRow
-        icon="ribbon-outline"
-        title="Clube"
-        subtitle="Meus pacotes de desconto"
-        badge="Novo"
-      />
+      <MenuRow icon="ribbon-outline" title="Clube" subtitle="Pacotes de desconto" badge="Novo" />
       <Divider />
 
-      <MenuRow icon="pricetag-outline" title="Cupons" subtitle="Meus cupons de desconto" />
+      <MenuRow icon="pricetag-outline" title="Cupons" subtitle="Descontos disponiveis" />
       <Divider />
 
       <MenuRow

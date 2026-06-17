@@ -1,13 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import {
-  Modal,
-  Pressable,
-  TouchableWithoutFeedback,
-  View,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import React, { useState } from 'react';
+import { Modal, Pressable, Share, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ModalProps = {
@@ -16,41 +10,58 @@ type ModalProps = {
   onSetVisible: (text: boolean) => void;
 };
 
+const fonts = {
+  regular: { fontFamily: 'Inter_400Regular' },
+  medium: { fontFamily: 'Inter_500Medium' },
+  bold: { fontFamily: 'Inter_700Bold' },
+  black: { fontFamily: 'Inter_900Black' },
+};
+
 function IndicarModalComponente({ userName, modalVisible, onSetVisible }: ModalProps) {
   const insets = useSafeAreaInsets();
+  const [copied, setCopied] = useState(false);
   const referralCode = userName
     ? `${userName.toUpperCase().replace(/\s/g, '').slice(0, 6)}10`
     : 'AMIGO10';
-  console.log('Renderizou inidicarModal', {
-    userName,
-    modalVisible,
-    onSetVisible,
-  });
+
+  async function copyCode() {
+    await Clipboard.setStringAsync(referralCode);
+    setCopied(true);
+  }
+
+  async function shareInvite() {
+    await Share.share({
+      message: `Use meu codigo ${referralCode} no OmniZap para receber lembretes pelo WhatsApp.`,
+    });
+  }
+
   return (
     <>
-      <TouchableOpacity
-        className="mx-4 mt-4 flex-row items-center justify-between rounded-3xl border border-slate-200 bg-white p-4"
-        onPress={() => onSetVisible(true)}
-        activeOpacity={0.82}>
+      <Pressable
+        className="mt-5 flex-row items-center justify-between rounded-[28px] bg-white p-4"
+        onPress={() => {
+          setCopied(false);
+          onSetVisible(true);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Indicar amigos">
         <View className="flex-row items-center">
-          <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50">
-            <Ionicons name="gift-outline" size={20} color="#128C7E" />
+          <View className="mr-3 h-11 w-11 items-center justify-center rounded-[18px] bg-[#EEE7FF]">
+            <Ionicons name="gift-outline" size={20} color="#6135E8" />
           </View>
 
           <View>
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-lg text-slate-900">
-              Indique e ganhe R$ 10
+            <Text style={fonts.bold} className="text-[15px] text-[#24252C]">
+              Indique e ganhe
             </Text>
-            <Text
-              style={{ fontFamily: 'Inter_400Regular' }}
-              className="mt-0.5 text-xs text-slate-500">
-              Convide amigos para usar o app
+            <Text style={fonts.medium} className="mt-0.5 text-[12px] text-[#8B8D97]">
+              Compartilhe seu codigo
             </Text>
           </View>
         </View>
 
-        <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
-      </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={18} color="#B4B8C2" />
+      </Pressable>
 
       <Modal
         visible={modalVisible}
@@ -58,97 +69,62 @@ function IndicarModalComponente({ userName, modalVisible, onSetVisible }: ModalP
         animationType="slide"
         onRequestClose={() => onSetVisible(false)}>
         <TouchableWithoutFeedback onPress={() => onSetVisible(false)}>
-          <View className="flex-1 justify-end bg-black/45">
+          <View className="flex-1 justify-end bg-black/35">
             <TouchableWithoutFeedback>
               <View
-                className="rounded-t-[28px] border-t border-slate-200 bg-white"
+                className="rounded-t-[30px] bg-white px-5 pb-5 pt-3"
                 style={{
-                  paddingBottom: Math.max(insets.bottom, 16),
+                  paddingBottom: Math.max(insets.bottom, 20),
                 }}>
-                <View className="items-center pb-2 pt-3">
-                  <View className="h-1 w-10 rounded-full bg-slate-300" />
+                <View className="items-center pb-3">
+                  <View className="h-1.5 w-11 rounded-full bg-[#D8DEE4]" />
                 </View>
 
                 <Pressable
                   onPress={() => onSetVisible(false)}
-                  className="absolute right-5 top-4 z-10 h-8 w-8 items-center justify-center rounded-full bg-slate-100">
-                  <Ionicons name="close" size={20} color="#64748b" />
+                  accessibilityRole="button"
+                  accessibilityLabel="Fechar indicacao"
+                  className="absolute right-5 top-4 z-10 h-10 w-10 items-center justify-center rounded-full bg-[#F2F4F7]">
+                  <Ionicons name="close" size={20} color="#747887" />
                 </Pressable>
 
-                <View className="items-center px-6 pt-2">
-                  <View className="mb-3 h-16 w-16 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50">
-                    <Ionicons name="gift" size={30} color="#128C7E" />
-                  </View>
-
-                  <Text
-                    style={{ fontFamily: 'Inter_700Bold' }}
-                    className="text-center text-xl text-slate-900">
-                    Indique amigos e ganhe R$ 10
+                <View className="pr-12">
+                  <Text style={fonts.black} className="text-[22px] text-[#24252C]">
+                    Indique amigos
                   </Text>
-
-                  <Text
-                    style={{ fontFamily: 'Inter_400Regular' }}
-                    className="mt-1.5 text-center text-sm leading-5 text-slate-500">
-                    Quando um amigo fizer o primeiro pedido, voces dois recebem desconto.
+                  <Text style={fonts.medium} className="mt-1 text-[13px] leading-5 text-[#8B8D97]">
+                    Copie seu codigo e envie para quem tambem quer receber lembretes no WhatsApp.
                   </Text>
                 </View>
 
-                <View className="mx-6 mt-5 flex-row items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3.5">
-                  <View>
-                    <Text
-                      style={{ fontFamily: 'Inter_400Regular' }}
-                      className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
-                      Seu codigo
-                    </Text>
-                    <Text
-                      style={{ fontFamily: 'Inter_700Bold' }}
-                      className="mt-1 text-lg text-slate-900">
+                <View className="mt-5 rounded-[24px] bg-[#F7F8FB] p-4">
+                  <Text
+                    style={fonts.bold}
+                    className="text-[11px] uppercase tracking-[0.14em] text-[#8B8D97]">
+                    Seu codigo
+                  </Text>
+                  <View className="mt-3 flex-row items-center justify-between">
+                    <Text style={fonts.black} className="text-[24px] text-[#24252C]">
                       {referralCode}
                     </Text>
-                  </View>
-
-                  <TouchableOpacity className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2">
-                    <Text
-                      style={{ fontFamily: 'Inter_700Bold' }}
-                      className="text-xs text-emerald-700">
-                      Copiar
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="mx-6 mt-5 gap-3">
-                  {[
-                    {
-                      icon: 'paper-plane-outline' as const,
-                      text: 'Compartilhe seu codigo com amigos.',
-                    },
-                    { icon: 'cart-outline' as const, text: 'Seu amigo realiza o primeiro pedido.' },
-                    { icon: 'cash-outline' as const, text: 'Os dois recebem R$ 10 em desconto.' },
-                  ].map((step, index) => (
-                    <View key={index} className="flex-row items-center">
-                      <View className="h-9 w-9 items-center justify-center rounded-full border border-cyan-100 bg-cyan-50">
-                        <Ionicons name={step.icon} size={17} color="#0284C7" />
-                      </View>
-
-                      <Text
-                        style={{ fontFamily: 'Inter_400Regular' }}
-                        className="ml-3 flex-1 text-sm text-slate-700">
-                        {step.text}
+                    <Pressable
+                      onPress={copyCode}
+                      className="rounded-[16px] bg-[#E7F8F1] px-4 py-2.5">
+                      <Text style={fonts.bold} className="text-[13px] text-[#128C7E]">
+                        {copied ? 'Copiado' : 'Copiar'}
                       </Text>
-                    </View>
-                  ))}
+                    </Pressable>
+                  </View>
                 </View>
 
-                <TouchableOpacity
-                  className="mx-6 mt-6 flex-row items-center justify-center rounded-2xl bg-[#128C7E] py-4"
-                  activeOpacity={0.85}>
+                <Pressable
+                  onPress={shareInvite}
+                  className="mt-5 h-14 flex-row items-center justify-center rounded-[20px] bg-[#128C7E]">
                   <Ionicons name="share-social-outline" size={18} color="#fff" />
-                  <Text
-                    style={{ fontFamily: 'Inter_700Bold' }}
-                    className="ml-2 text-base text-white">
+                  <Text style={fonts.black} className="ml-2 text-[15px] text-white">
                     Compartilhar convite
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </TouchableWithoutFeedback>
           </View>

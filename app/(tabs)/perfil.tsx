@@ -1,203 +1,342 @@
-import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  StatusBar,
-  Pressable,
-  Modal,
-  TouchableOpacity,
-  TextInput,
-} from 'react-native';
-import { auth, database } from '../../src/config/firebase';
-import { ref as dbRef, get, set } from 'firebase/database';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { IndicarModal } from '@/modais/IndicarModal';
-import { MenuPerfil } from '@/components/menuPerfil';
-import { Atmosphere } from '@/components/ui/Atmosphere';
-import { SurfaceCard } from '@/components/ui/SurfaceCard';
-import { Eyebrow } from '@/components/ui/Eyebrow';
+import { LinearGradient } from 'expo-linear-gradient';
 import { updateProfile } from 'firebase/auth';
+import { get, ref as dbRef, update } from 'firebase/database';
+import { ChevronRight, Mail, Pencil, Phone, UserRound, X } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { MenuPerfil } from '@/components/menuPerfil';
+import { IndicarModal } from '@/modais/IndicarModal';
+import { auth, database } from '../../src/config/firebase';
+
+type ProfileRecord = {
+  name?: string;
+  phone?: string;
+};
+
+const pageGradient = ['#FFFFFF', '#FBFFFD', '#F3FFF8', '#F7F3FF'] as const;
+
+const fonts = {
+  regular: { fontFamily: 'Inter_400Regular' },
+  medium: { fontFamily: 'Inter_500Medium' },
+  bold: { fontFamily: 'Inter_700Bold' },
+  black: { fontFamily: 'Inter_900Black' },
+};
+
+const surfaceShadow = {
+  shadowColor: '#191622',
+  shadowOffset: { width: 0, height: 12 },
+  shadowOpacity: 0.06,
+  shadowRadius: 24,
+  elevation: 3,
+};
+
+function formatPhone(phone?: string | null) {
+  const digits = phone?.replace(/\D/g, '') ?? '';
+
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  return phone || 'WhatsApp nao informado';
+}
 
 export default function Perfil() {
   const user = auth.currentUser;
   const [userName, setUserName] = useState<string | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true); // 👈 adicionar
-  const [visible, setVisible] = useState(false);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [editVisible, setEditVisible] = useState(false);
   const [nome, setNome] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [saving, setSaving] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const avatarColors = ['#128C7E', '#0F766E', '#14B8A6', '#0284C7', '#0EA5E9', '#334155'];
 
   useEffect(() => {
-    if (user) {
-      get(dbRef(database, `users/${user.uid}/name`))
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            const val = snapshot.val();
-            setUserName(val.name ?? null);
-          }
-        })
-        .finally(() => setLoadingUser(false));
-    } else {
-      setLoadingUser(false);
-    }
-  }, [user]);
-
-  function getAvatarColor(char: string) {
-    return avatarColors[(char.codePointAt(0) ?? 0) % avatarColors.length];
-  }
-
-  const onClose = () => {
-    setVisible(false);
-  };
-
-  async function salvarNome() {
     if (!user) {
+      setLoadingUser(false);
       return;
     }
 
+    get(dbRef(database, `users/${user.uid}/name`))
+      .then((snapshot) => {
+        if (!snapshot.exists()) return;
+
+        const val = snapshot.val() as ProfileRecord;
+        setUserName(val.name ?? null);
+        setPhone(val.phone ?? null);
+      })
+      .catch((error) => {
+        console.log('Erro ao buscar perfil:', error);
+      })
+      .finally(() => setLoadingUser(false));
+  }, [user]);
+
+  const displayName = userName ?? user?.displayName ?? 'Usuario';
+  const accountEmail = user?.email ?? 'sem-email@conta.com';
+  const avatarLetter = (displayName || accountEmail || '?')[0].toUpperCase();
+  const formattedPhone = useMemo(() => formatPhone(phone), [phone]);
+  const canSaveName = nome.trim().length >= 2 && !saving;
+
+  function openEditProfile() {
+    setNome(displayName);
+    setEditVisible(true);
+  }
+
+  function closeEditProfile() {
+    setEditVisible(false);
+  }
+
+  async function salvarNome() {
+    const trimmedName = nome.trim();
+
+    if (!user || trimmedName.length < 2) return;
+
     try {
-      setLoading(true);
+      setSaving(true);
 
       await updateProfile(user, {
-        displayName: nome.trim(),
+        displayName: trimmedName,
       });
 
-      await set(dbRef(database, `users/${user.uid}/name`), {
-        name: nome.trim(),
+      await update(dbRef(database, `users/${user.uid}/name`), {
+        name: trimmedName,
       });
 
-      setUserName(nome.trim());
-      onClose();
+      setUserName(trimmedName);
+      closeEditProfile();
     } catch (error) {
       console.log('Erro ao atualizar nome:', error);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   if (loadingUser) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#EAF7F1]">
-        <ActivityIndicator size="large" color="#128C7E" />
-      </View>
+      <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#128C7E" />
+        </View>
+      </LinearGradient>
     );
   }
 
   if (!user) return null;
 
-  const avatarLetter = (userName ?? user.displayName ?? user.email ?? '?')[0].toUpperCase();
-  const avatarColor = getAvatarColor(avatarLetter);
-  const displayName = userName ?? user.displayName ?? 'Usuario';
-  const accountEmail = user.email ?? 'sem-email@conta.com';
-
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-[#EAF7F1]">
-      <StatusBar backgroundColor="#EAF7F1" barStyle="dark-content" />
+    <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+      <SafeAreaView edges={['top']} className="flex-1">
+        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-8 pt-5"
-        showsVerticalScrollIndicator={false}>
-        <Atmosphere className="mx-4">
-          <SurfaceCard>
-            <Eyebrow>minha conta</Eyebrow>
-
-            <Text className="mt-2 text-3xl font-black leading-9 text-slate-900">Perfil</Text>
-
-            <Text className="mt-2 text-sm leading-5 text-slate-500">
-              Mantenha seu nome e WhatsApp atualizados para receber seus lembretes.
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="px-6 pb-28 pt-5"
+          showsVerticalScrollIndicator={false}>
+          <View className="items-center">
+            <Text style={fonts.black} className="text-[20px] leading-6 text-[#24252C]">
+              Perfil
             </Text>
+            <Text style={fonts.medium} className="mt-1 text-[12px] text-[#8B8D97]">
+              Conta e preferencias
+            </Text>
+          </View>
 
-            <View className="mt-5 rounded-2xl border border-[#DCEAE5] bg-[#F7FCFA] p-4">
-              {/* Botão Editar perfil */}
-              <Pressable
-                className="flex-row items-center"
-                onPress={() => {
-                  setNome(displayName);
-                  setVisible(true);
-                }}>
-                <View
-                  className="h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: avatarColor }}>
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-2xl text-white">
-                    {avatarLetter}
+          <View className="mt-7 rounded-[30px] bg-white p-5" style={surfaceShadow}>
+            <View className="flex-row items-start">
+              <View className="h-[72px] w-[72px] items-center justify-center rounded-[26px] bg-[#128C7E]">
+                <Text style={fonts.black} className="text-[28px] text-white">
+                  {avatarLetter}
+                </Text>
+              </View>
+
+              <View className="ml-4 flex-1">
+                <View className="self-start rounded-full bg-[#E7F8F1] px-3 py-1.5">
+                  <Text style={fonts.bold} className="text-[11px] text-[#128C7E]">
+                    Conta ativa
                   </Text>
                 </View>
 
-                <View className="ml-3 flex-1">
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-lg text-slate-900">
-                    {displayName}
-                  </Text>
+                <Text style={fonts.black} className="mt-3 text-[23px] leading-7 text-[#24252C]">
+                  {displayName}
+                </Text>
 
+                <Text
+                  style={fonts.medium}
+                  className="mt-1 text-[13px] leading-5 text-[#747887]"
+                  numberOfLines={1}>
+                  {accountEmail}
+                </Text>
+              </View>
+            </View>
+
+            <View className="mt-5 gap-3">
+              <View className="flex-row items-center rounded-[22px] bg-[#F7F8FB] px-4 py-3">
+                <Phone size={17} color="#128C7E" />
+                <View className="ml-3 flex-1">
+                  <Text style={fonts.bold} className="text-[11px] text-[#8B8D97]">
+                    WhatsApp dos lembretes
+                  </Text>
+                  <Text style={fonts.bold} className="mt-0.5 text-[14px] text-[#24252C]">
+                    {formattedPhone}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center rounded-[22px] bg-[#F7F8FB] px-4 py-3">
+                <Mail size={17} color="#6135E8" />
+                <View className="ml-3 flex-1">
+                  <Text style={fonts.bold} className="text-[11px] text-[#8B8D97]">
+                    E-mail de acesso
+                  </Text>
                   <Text
-                    style={{ fontFamily: 'Inter_400Regular' }}
-                    className="mt-0.5 text-sm text-slate-500">
+                    style={fonts.bold}
+                    className="mt-0.5 text-[14px] text-[#24252C]"
+                    numberOfLines={1}>
                     {accountEmail}
                   </Text>
+                </View>
+              </View>
+            </View>
 
-                  <View className="mt-2 self-start rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
-                    <Text className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">
-                      conta ativa
+            <Pressable
+              onPress={openEditProfile}
+              accessibilityRole="button"
+              accessibilityLabel="Editar perfil"
+              className="mt-5 h-[52px] flex-row items-center justify-center rounded-[20px] bg-[#128C7E]">
+              <Pencil size={16} color="#FFFFFF" />
+              <Text style={fonts.black} className="ml-2 text-[15px] text-white">
+                Editar perfil
+              </Text>
+            </Pressable>
+          </View>
+
+          <IndicarModal
+            userName={userName}
+            modalVisible={modalVisible}
+            onSetVisible={setModalVisible}
+          />
+
+          <View className="mt-5">
+            <Text style={fonts.black} className="mb-3 text-[18px] text-[#24252C]">
+              Preferencias
+            </Text>
+            <MenuPerfil userName={userName} />
+          </View>
+        </ScrollView>
+
+        <Modal
+          visible={editVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={closeEditProfile}>
+          <View className="flex-1 justify-end bg-black/35">
+            <Pressable className="absolute inset-0" onPress={closeEditProfile} />
+
+            <KeyboardAwareScrollView
+              enableOnAndroid
+              extraScrollHeight={72}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
+              <View className="rounded-t-[30px] bg-white px-5 pb-7 pt-3" style={surfaceShadow}>
+                <View className="items-center pb-3">
+                  <View className="h-1.5 w-11 rounded-full bg-[#D8DEE4]" />
+                </View>
+
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text style={fonts.black} className="text-[22px] text-[#24252C]">
+                      Editar perfil
+                    </Text>
+                    <Text style={fonts.medium} className="mt-1 text-[13px] text-[#8B8D97]">
+                      O nome aparece na sua conta.
                     </Text>
                   </View>
+
+                  <Pressable
+                    onPress={closeEditProfile}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Fechar edicao de perfil"
+                    className="h-10 w-10 items-center justify-center rounded-full bg-[#F2F4F7]">
+                    <X size={18} color="#747887" />
+                  </Pressable>
                 </View>
-              </Pressable>
-            </View>
-          </SurfaceCard>
-        </Atmosphere>
 
-        <IndicarModal
-          userName={userName}
-          modalVisible={modalVisible}
-          onSetVisible={setModalVisible}
-        />
-        <MenuPerfil userName={userName} />
-      </ScrollView>
+                <View className="mt-6">
+                  <Text style={fonts.bold} className="mb-2 text-[13px] text-[#747887]">
+                    Nome
+                  </Text>
 
-      {/* Modal Editar Nome */}
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <View className="flex-1 items-center justify-center bg-black/60 px-6">
-          <Pressable className="absolute inset-0" onPress={onClose} />
+                  <View className="flex-row items-center rounded-[20px] border border-[#E6E8EE] bg-[#F7F8FB] px-4">
+                    <UserRound size={17} color="#128C7E" />
+                    <TextInput
+                      value={nome}
+                      onChangeText={setNome}
+                      placeholder="Digite seu nome"
+                      placeholderTextColor="#9CA0AA"
+                      autoCapitalize="words"
+                      cursorColor="#128C7E"
+                      selectionColor="#128C7E"
+                      style={fonts.medium}
+                      className="ml-3 flex-1 py-4 text-[16px] text-[#24252C]"
+                    />
+                  </View>
+                </View>
 
-          <View className="w-full rounded-3xl bg-white p-6">
-            <Text className="text-xl font-bold text-slate-900">Editar perfil</Text>
+                <View className="mt-6 flex-row gap-3">
+                  <Pressable
+                    onPress={closeEditProfile}
+                    disabled={saving}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancelar edicao"
+                    className="h-[52px] flex-1 items-center justify-center rounded-[18px] border border-[#E1E5EB] bg-white">
+                    <Text style={fonts.bold} className="text-[14px] text-[#747887]">
+                      Cancelar
+                    </Text>
+                  </Pressable>
 
-            <Text className="mt-2 text-sm text-slate-500">Altere seu nome de exibição.</Text>
-
-            <View className="mt-5">
-              <Text className="mb-2 text-sm font-semibold text-slate-700">Nome</Text>
-
-              <TextInput
-                value={nome}
-                onChangeText={setNome}
-                placeholder="Digite seu nome"
-                placeholderTextColor="#94a3b8"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900"
-              />
-            </View>
-
-            <View className="mt-6 flex-row gap-3">
-              <TouchableOpacity onPress={onClose} className="flex-1 rounded-2xl bg-slate-100 py-4">
-                <Text className="text-center font-semibold text-slate-700">Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={salvarNome}
-                className="flex-1 rounded-2xl bg-orange-500 py-4">
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-center font-semibold text-white">Salvar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+                  <Pressable
+                    onPress={salvarNome}
+                    disabled={!canSaveName}
+                    accessibilityRole="button"
+                    accessibilityLabel="Salvar perfil"
+                    className={`h-[52px] flex-1 flex-row items-center justify-center rounded-[18px] ${
+                      canSaveName ? 'bg-[#128C7E]' : 'bg-[#DCE2E8]'
+                    }`}>
+                    {saving ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Text
+                          style={fonts.black}
+                          className={`text-[14px] ${canSaveName ? 'text-white' : 'text-[#8B8D97]'}`}>
+                          Salvar
+                        </Text>
+                        <ChevronRight size={16} color={canSaveName ? '#FFFFFF' : '#8B8D97'} />
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            </KeyboardAwareScrollView>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
