@@ -1,6 +1,7 @@
 import {
   addReminderToCache,
   buildOptimisticReminder,
+  replaceReminderInCache,
   removeReminderFromCache,
   restoreReminderCacheSnapshot,
   updateReminderInCache,
@@ -63,6 +64,20 @@ if (added.length !== 2 || added[1] !== optimistic) {
   throw new Error('Expected addReminderToCache to append optimistic reminders');
 }
 
+const realReminder: ReminderCacheItem = {
+  ...optimistic,
+  id: 99,
+};
+const replaced = replaceReminderInCache(added, optimistic.id, realReminder);
+if (replaced.length !== 2 || replaced[1].id !== 99) {
+  throw new Error('Expected replaceReminderInCache to swap optimistic reminder with real id');
+}
+
+const appendedReplacement = replaceReminderInCache(reminders, optimistic.id, realReminder);
+if (appendedReplacement.length !== 2 || appendedReplacement[1].id !== 99) {
+  throw new Error('Expected replaceReminderInCache to append when optimistic id is missing');
+}
+
 const snapshot = reminders.slice();
 const changed = removeReminderFromCache(reminders, 42);
 const restored = restoreReminderCacheSnapshot(changed, snapshot);
@@ -73,5 +88,7 @@ if (restored !== snapshot || restored.length !== 1 || restored[0].id !== 42) {
 
 const restoredWithoutSnapshot = restoreReminderCacheSnapshot([optimistic], undefined);
 if (restoredWithoutSnapshot.length !== 0) {
-  throw new Error('Expected restoreReminderCacheSnapshot to clear optimistic data without snapshot');
+  throw new Error(
+    'Expected restoreReminderCacheSnapshot to clear optimistic data without snapshot'
+  );
 }

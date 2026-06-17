@@ -80,6 +80,22 @@ export function addReminderToCache(
   return [...reminders, reminder];
 }
 
+export function replaceReminderInCache(
+  reminders: ReminderCacheItem[],
+  currentId: number | string,
+  reminder: ReminderCacheItem
+): ReminderCacheItem[] {
+  let replaced = false;
+  const nextReminders = reminders.map((item) => {
+    if (!idsMatch(item.id, currentId)) return item;
+
+    replaced = true;
+    return reminder;
+  });
+
+  return replaced ? nextReminders : addReminderToCache(reminders, reminder);
+}
+
 export function updateReminderInCache(
   reminders: ReminderCacheItem[],
   update: ReminderCacheUpdate

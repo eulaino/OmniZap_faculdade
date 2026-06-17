@@ -181,8 +181,8 @@ function ListaComandosComponent({
     queryKey: remindersKey,
     queryFn: buscarLembretes,
     enabled: !!user?.uid,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: APP_DATA_REFETCH_INTERVAL_MS,
+    refetchOnMount: true,
     refetchOnReconnect: true,
     refetchInterval: APP_DATA_REFETCH_INTERVAL_MS,
     refetchIntervalInBackground: false,
@@ -211,7 +211,7 @@ function ListaComandosComponent({
       );
     },
     onSuccess: async () => {
-      await refreshReminderAppData(queryClient, user?.uid);
+      await refreshReminderAppData(queryClient, user?.uid, { includeReminders: false });
     },
   });
 
@@ -233,7 +233,7 @@ function ListaComandosComponent({
       );
     },
     onSuccess: async () => {
-      await refreshReminderAppData(queryClient, user?.uid);
+      await refreshReminderAppData(queryClient, user?.uid, { includeReminders: false });
     },
   });
 

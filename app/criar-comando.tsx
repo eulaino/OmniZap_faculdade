@@ -14,6 +14,7 @@ import { auth } from '@/config/firebase';
 import {
   addReminderToCache,
   buildOptimisticReminder,
+  replaceReminderInCache,
   restoreReminderCacheSnapshot,
   type ReminderCacheItem,
 } from '@/services/reminderCache';
@@ -88,7 +89,7 @@ async function criarLembreteApi({
     throw new Error('Data invalida');
   }
 
-  await api.post(
+  const response = await api.post(
     '/api/lembrete',
     buildReminderCreatePayload({
       numero,
@@ -99,6 +100,8 @@ async function criarLembreteApi({
       weekday,
     })
   );
+
+  return response.data?.lembrete as ReminderCacheItem | undefined;
 }
 
 export default function CriarComando() {
@@ -142,7 +145,7 @@ export default function CriarComando() {
         addReminderToCache(old, optimisticReminder)
       );
 
-      return { previousReminders };
+      return { optimisticReminderId: optimisticReminder.id, previousReminders };
     },
     onError: (_error, _draft, context) => {
       queryClient.setQueryData<ReminderCacheItem[]>(reminderQueryKey(user?.uid), (old = []) =>
@@ -157,11 +160,19 @@ export default function CriarComando() {
         bottomOffset: 140,
       });
     },
-    onSuccess: () => {
+    onSuccess: (createdReminder, _draft, context) => {
+      if (createdReminder && context?.optimisticReminderId) {
+        queryClient.setQueryData<ReminderCacheItem[]>(reminderQueryKey(user?.uid), (old = []) =>
+          replaceReminderInCache(old, context.optimisticReminderId, createdReminder)
+        );
+      }
+
       router.back();
-      void refreshReminderAppData(queryClient, user?.uid).catch((error) => {
-        console.log('Erro ao atualizar lembretes apos criar:', error);
-      });
+      void refreshReminderAppData(queryClient, user?.uid, { includeReminders: false }).catch(
+        (error) => {
+          console.log('Erro ao atualizar dados apos criar lembrete:', error);
+        }
+      );
 
       Toast.show({
         type: 'success',

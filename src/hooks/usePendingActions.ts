@@ -6,6 +6,7 @@ import { api } from '@/services/api';
 import {
   addReminderToCache,
   buildOptimisticReminder,
+  replaceReminderInCache,
   restoreReminderCacheSnapshot,
   type ReminderCacheItem,
 } from '@/services/reminderCache';
@@ -62,7 +63,7 @@ async function confirmarPendencia(id: number) {
     numero,
   });
 
-  return response.data;
+  return response.data as { lembrete?: ReminderCacheItem };
 }
 
 async function cancelarPendencia(id: number) {
@@ -113,6 +114,7 @@ export function usePendingActions() {
       const previousPending = queryClient.getQueryData<PendingAction[]>(pendingKey);
       const previousReminders = queryClient.getQueryData<ReminderCacheItem[]>(remindersKey);
       const pendingAction = previousPending?.find((action) => action.id === id);
+      let optimisticReminderId: number | string | undefined;
 
       queryClient.setQueryData<PendingAction[]>(pendingKey, (old = []) =>
         old.filter((action) => action.id !== id)
@@ -128,13 +130,14 @@ export function usePendingActions() {
           },
           pendingActionCreatedAt(pendingAction.created_at)
         );
+        optimisticReminderId = optimisticReminder.id;
 
         queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) =>
           addReminderToCache(old, optimisticReminder)
         );
       }
 
-      return { previousPending, previousReminders };
+      return { optimisticReminderId, previousPending, previousReminders };
     },
     onError: (_error, _id, context) => {
       if (context?.previousPending) {
@@ -153,9 +156,16 @@ export function usePendingActions() {
         bottomOffset: 140,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (response, _id, context) => {
+      if (response.lembrete && context?.optimisticReminderId) {
+        queryClient.setQueryData<ReminderCacheItem[]>(remindersKey, (old = []) =>
+          replaceReminderInCache(old, context.optimisticReminderId!, response.lembrete!)
+        );
+      }
+
       await refreshReminderAppData(queryClient, user?.uid, {
         includePendingActions: true,
+        includeReminders: false,
       });
 
       Toast.show({

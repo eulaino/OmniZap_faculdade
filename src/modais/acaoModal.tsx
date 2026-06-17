@@ -126,15 +126,19 @@ function AcaoModalComponent({
   async function handleSave() {
     if (!canSave) return;
 
-    await onUpdate({
-      date: draftIsoDate ?? undefined,
-      message: draftMessageTrimmed,
-      repeatType: draftRepeatType,
-      time: draftTime,
-      weekday: draftRepeatType === 'weekly' ? draftWeekday : undefined,
-    });
+    try {
+      await onUpdate({
+        date: draftIsoDate ?? undefined,
+        message: draftMessageTrimmed,
+        repeatType: draftRepeatType,
+        time: draftTime,
+        weekday: draftRepeatType === 'weekly' ? draftWeekday : undefined,
+      });
 
-    setIsEditing(false);
+      setIsEditing(false);
+    } catch {
+      // Toast is shown by the caller; keep edit form open so user can retry.
+    }
   }
 
   function handleCancelEdit() {
