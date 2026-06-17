@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateProfile } from 'firebase/auth';
 import { get, ref as dbRef, update } from 'firebase/database';
-import { ChevronRight, Mail, Pencil, Phone, UserRound, X } from 'lucide-react-native';
+import { CheckCircle2, ChevronRight, Mail, Pencil, Phone, UserRound, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -18,11 +19,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MenuPerfil } from '@/components/menuPerfil';
 import { IndicarModal } from '@/modais/IndicarModal';
+import {
+  activateWhatsAppFromApp,
+  getWhatsAppActivationErrorMessage,
+} from '@/services/whatsappActivation';
 import { auth, database } from '../../src/config/firebase';
 
 type ProfileRecord = {
   name?: string;
   phone?: string;
+  whatsappActive?: boolean;
+  whatsappLid?: string | null;
 };
 
 const pageGradient = ['#FFFFFF', '#FBFFFD', '#F3FFF8', '#F7F3FF'] as const;
@@ -60,10 +67,13 @@ export default function Perfil() {
   const user = auth.currentUser;
   const [userName, setUserName] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
+  const [whatsappActive, setWhatsappActive] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
   const [editVisible, setEditVisible] = useState(false);
   const [nome, setNome] = useState('');
   const [saving, setSaving] = useState(false);
+  const [activatingWhatsApp, setActivatingWhatsApp] = useState(false);
+  const [activationFeedback, setActivationFeedback] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
@@ -79,6 +89,7 @@ export default function Perfil() {
         const val = snapshot.val() as ProfileRecord;
         setUserName(val.name ?? null);
         setPhone(val.phone ?? null);
+        setWhatsappActive(val.whatsappActive === true);
       })
       .catch((error) => {
         console.log('Erro ao buscar perfil:', error);
@@ -123,6 +134,36 @@ export default function Perfil() {
       console.log('Erro ao atualizar nome:', error);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function ativarWhatsApp() {
+    if (!user || !phone) return;
+
+    try {
+      setActivatingWhatsApp(true);
+      setActivationFeedback('');
+
+      const activation = await activateWhatsAppFromApp({
+        uid: user.uid,
+        phone,
+      });
+
+      await update(dbRef(database, `users/${user.uid}/name`), {
+        phone: activation.numero || phone,
+        whatsappActive: activation.whatsappActive,
+        whatsappLid: activation.lid,
+        whatsappVerifiedAt: new Date().toISOString(),
+      });
+
+      await AsyncStorage.setItem('user_phone', activation.numero || phone);
+      setPhone(activation.numero || phone);
+      setWhatsappActive(activation.whatsappActive);
+      setActivationFeedback('WhatsApp conectado ao bot.');
+    } catch (error) {
+      setActivationFeedback(getWhatsAppActivationErrorMessage(error));
+    } finally {
+      setActivatingWhatsApp(false);
     }
   }
 
@@ -194,8 +235,43 @@ export default function Perfil() {
                   <Text style={fonts.bold} className="mt-0.5 text-[14px] text-[#24252C]">
                     {formattedPhone}
                   </Text>
+                  <Text
+                    style={fonts.bold}
+                    className={`mt-1 text-[11px] ${
+                      whatsappActive ? 'text-[#128C7E]' : 'text-[#B45309]'
+                    }`}>
+                    {whatsappActive ? 'Conectado ao bot' : 'Ativacao pendente'}
+                  </Text>
                 </View>
+                {whatsappActive ? (
+                  <CheckCircle2 size={18} color="#128C7E" />
+                ) : (
+                  <Pressable
+                    onPress={ativarWhatsApp}
+                    disabled={activatingWhatsApp || !phone}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ativar WhatsApp dos lembretes"
+                    className="min-w-[72px] items-center rounded-[16px] bg-[#128C7E] px-3 py-2">
+                    {activatingWhatsApp ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={fonts.black} className="text-[12px] text-white">
+                        Ativar
+                      </Text>
+                    )}
+                  </Pressable>
+                )}
               </View>
+
+              {activationFeedback ? (
+                <Text
+                  style={fonts.bold}
+                  className={`px-1 text-[12px] ${
+                    whatsappActive ? 'text-[#128C7E]' : 'text-rose-600'
+                  }`}>
+                  {activationFeedback}
+                </Text>
+              ) : null}
 
               <View className="flex-row items-center rounded-[22px] bg-[#F7F8FB] px-4 py-3">
                 <Mail size={17} color="#6135E8" />

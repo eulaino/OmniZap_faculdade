@@ -9,6 +9,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckCircle2, Phone, UserRound } from 'lucide-react-native';
 
 import { AuthWaveBackdropSvg } from '@/components/auth/AuthWaveBackdropSvg';
+import {
+  activateWhatsAppFromApp,
+  getWhatsAppActivationErrorMessage,
+} from '@/services/whatsappActivation';
 import { auth, database } from '../src/config/firebase';
 
 type SaveState = 'idle' | 'error' | 'success';
@@ -49,7 +53,11 @@ export default function Onboarding() {
   const normalizedName = useMemo(() => name.trim().replace(/\s+/g, ' '), [name]);
   const phoneRaw = phone.replace(/\D/g, '');
   const canSubmit =
-    normalizedName.length >= 2 && phoneRaw.length > 0 && !loading && saveState !== 'success';
+    normalizedName.length >= 2 &&
+    phoneRaw.length >= 10 &&
+    phoneRaw.length <= 15 &&
+    !loading &&
+    saveState !== 'success';
 
   const title = saveState === 'success' ? 'Perfil pronto' : 'Finalize seu perfil';
   const subtitle =
@@ -84,16 +92,24 @@ export default function Onboarding() {
     setFeedbackMessage('');
 
     try {
+      const activation = await activateWhatsAppFromApp({
+        uid: user.uid,
+        phone: phoneRaw,
+      });
+
       await set(ref(database, `users/${user.uid}/name`), {
         name: normalizedName,
-        phone: phoneRaw,
+        phone: activation.numero || phoneRaw,
+        whatsappActive: activation.whatsappActive,
+        whatsappLid: activation.lid,
+        whatsappVerifiedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       });
       await updateProfile(user, { displayName: normalizedName });
-      await AsyncStorage.setItem('user_phone', phoneRaw);
+      await AsyncStorage.setItem('user_phone', activation.numero || phoneRaw);
 
       setSaveState('success');
-      setFeedbackMessage('Perfil salvo. Entrando...');
+      setFeedbackMessage('WhatsApp conectado. Entrando...');
       setLoading(false);
       await new Promise((resolve) => setTimeout(resolve, 420));
       router.replace('/');
@@ -101,7 +117,7 @@ export default function Onboarding() {
     } catch (error) {
       console.log('Erro ao salvar nome no onboarding', error);
       setSaveState('error');
-      setFeedbackMessage('Nao foi possivel salvar. Tente de novo.');
+      setFeedbackMessage(getWhatsAppActivationErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -180,7 +196,7 @@ export default function Onboarding() {
                         resetFeedbackIfNeeded();
                       }}
                       onBlur={() => setFocusedField(null)}
-                      placeholder="Ex.: Ana Martins"
+                      placeholder="Ex.: João Fernandes"
                       placeholderTextColor="#8FA39C"
                       autoCapitalize="words"
                       autoCorrect={false}
@@ -217,7 +233,7 @@ export default function Onboarding() {
                         resetFeedbackIfNeeded();
                       }}
                       onBlur={() => setFocusedField(null)}
-                      placeholder="Ex.: 5521990555020"
+                      placeholder="Ex.: 5521990558030"
                       placeholderTextColor="#8FA39C"
                       keyboardType="phone-pad"
                       autoCapitalize="none"
@@ -233,16 +249,14 @@ export default function Onboarding() {
 
                 {feedbackMessage ? (
                   <View
-                    className={`rounded-xl border px-3 py-2.5 ${
-                      saveState === 'success'
-                        ? 'border-emerald-200 bg-emerald-50'
-                        : 'border-rose-200 bg-rose-50'
-                    }`}>
+                    className={`rounded-xl border px-3 py-2.5 ${saveState === 'success'
+                      ? 'border-emerald-200 bg-emerald-50'
+                      : 'border-rose-200 bg-rose-50'
+                      }`}>
                     <Text
                       style={authFonts.bold}
-                      className={`text-center text-[13px] leading-5 ${
-                        saveState === 'success' ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
+                      className={`text-center text-[13px] leading-5 ${saveState === 'success' ? 'text-emerald-700' : 'text-rose-700'
+                        }`}>
                       {feedbackMessage}
                     </Text>
                   </View>
@@ -257,9 +271,8 @@ export default function Onboarding() {
                 accessibilityRole="button"
                 accessibilityLabel="Salvar perfil e entrar"
                 accessibilityState={{ disabled: !canSubmit, busy: loading }}
-                className={`h-14 flex-row items-center justify-center gap-2 rounded-2xl ${
-                  !canSubmit ? 'bg-[#128C7E]/55' : 'bg-[#128C7E] active:bg-[#0f766e]'
-                }`}>
+                className={`h-14 flex-row items-center justify-center gap-2 rounded-2xl ${!canSubmit ? 'bg-[#128C7E]/55' : 'bg-[#128C7E] active:bg-[#0f766e]'
+                  }`}>
                 {loading ? (
                   <>
                     <ActivityIndicator color="#ffffff" />
