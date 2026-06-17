@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BellRing, ChevronRight } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
@@ -21,6 +21,7 @@ import {
 import {
   buildReminderUpdatePayload,
   formatReminderSchedule,
+  inputDateToIsoDate,
   isoDateToInputDate,
   normalizeReminderType,
   type ReminderRepeatType,
@@ -52,6 +53,15 @@ type AtualizarLembreteParams = {
   repeatType: ReminderRepeatType;
   time: string;
   weekday?: number;
+};
+
+export type ReminderListFilter = 'all' | 'once' | 'recurring';
+
+type ListaComandosProps = {
+  emptyDescription?: string;
+  emptyTitle?: string;
+  filter?: ReminderListFilter;
+  selectedDate?: string;
 };
 
 async function buscarLembretes() {
@@ -103,7 +113,59 @@ async function atualizarLembrete({
   );
 }
 
-function ListaComandosComponent() {
+function getAppWeekdayFromInputDate(inputDate?: string) {
+  if (!inputDate) return null;
+
+  const [day, month, year] = inputDate.split('/');
+  if (!day || !month || !year) return null;
+
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (Number.isNaN(date.getTime())) return null;
+
+  const jsWeekday = date.getDay();
+  return jsWeekday === 0 ? 6 : jsWeekday - 1;
+}
+
+function reminderMatchesDate(item: LembretesProps, selectedDate?: string) {
+  if (!selectedDate) return true;
+
+  const repeatType = normalizeReminderType(item.type);
+
+  if (repeatType === 'daily') return true;
+
+  if (repeatType === 'weekly') {
+    return item.weekday === getAppWeekdayFromInputDate(selectedDate);
+  }
+
+  return item.date === inputDateToIsoDate(selectedDate);
+}
+
+function reminderMatchesFilter(item: LembretesProps, filter: ReminderListFilter) {
+  const repeatType = normalizeReminderType(item.type);
+
+  if (filter === 'once') return repeatType === 'once';
+  if (filter === 'recurring') return repeatType === 'daily' || repeatType === 'weekly';
+
+  return true;
+}
+
+function getReminderBadge(item: LembretesProps) {
+  const repeatType = normalizeReminderType(item.type);
+
+  if (repeatType === 'daily')
+    return { label: 'Diario', bgClassName: 'bg-[#EEE7FF]', textClassName: 'text-[#6135E8]' };
+  if (repeatType === 'weekly')
+    return { label: 'Semanal', bgClassName: 'bg-[#E7F8F1]', textClassName: 'text-[#128C7E]' };
+
+  return { label: 'Pontual', bgClassName: 'bg-[#FFE4F3]', textClassName: 'text-[#EC4899]' };
+}
+
+function ListaComandosComponent({
+  emptyDescription = 'Use Novo lembrete para criar seu primeiro aviso no WhatsApp.',
+  emptyTitle = 'Nenhum lembrete cadastrado',
+  filter = 'all',
+  selectedDate,
+}: ListaComandosProps) {
   const [selectedItem, setSelectedItem] = useState<LembretesProps | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const queryClient = useQueryClient();
@@ -267,6 +329,13 @@ function ListaComandosComponent() {
   const dataLembreteFormatada = selectedItem?.date
     ? isoDateToInputDate(selectedItem.date)
     : 'Data nao definida';
+  const filteredReminders = useMemo(
+    () =>
+      lembretes.filter(
+        (item) => reminderMatchesDate(item, selectedDate) && reminderMatchesFilter(item, filter)
+      ),
+    [filter, lembretes, selectedDate]
+  );
 
   if (isLoading) {
     return (
@@ -288,47 +357,53 @@ function ListaComandosComponent() {
 
   return (
     <View className="gap-3">
-      {!lembretes.length ? (
+      {!filteredReminders.length ? (
         <View style={reminderCardShadow} className="items-center rounded-2xl bg-white px-4 py-7">
-          <Text className="text-sm font-semibold text-[#24252C]">Nenhum lembrete cadastrado</Text>
+          <Text className="text-sm font-semibold text-[#24252C]">{emptyTitle}</Text>
           <Text className="mt-1 text-center text-xs leading-5 text-[#8B8D97]">
-            Use Novo lembrete para criar seu primeiro aviso no WhatsApp.
+            {emptyDescription}
           </Text>
         </View>
       ) : (
-        lembretes.map((item) => (
-          <Pressable
-            key={item.id}
-            style={reminderCardShadow}
-            className="flex-row items-center rounded-2xl bg-white p-4"
-            onPress={() => abrirLembrete(item)}>
-            <View className="mr-4 h-11 w-11 items-center justify-center rounded-xl bg-[#E7F8F1]">
-              <BellRing size={20} color="#128C7E" />
-            </View>
+        filteredReminders.map((item) => {
+          const badge = getReminderBadge(item);
 
-            <View className="flex-1">
-              <View className="flex-row items-center justify-between">
-                <Text
-                  className="flex-1 pr-3 text-[15px] font-bold text-[#24252C]"
-                  numberOfLines={1}>
-                  {item.message}
-                </Text>
+          return (
+            <Pressable
+              key={item.id}
+              style={reminderCardShadow}
+              className="rounded-2xl bg-white p-4"
+              onPress={() => abrirLembrete(item)}>
+              <View className="flex-row items-start">
+                <View className="mr-4 h-11 w-11 items-center justify-center rounded-xl bg-[#E7F8F1]">
+                  <BellRing size={20} color="#128C7E" />
+                </View>
 
-                <View className="rounded-full bg-[#E7F8F1] px-2.5 py-1">
-                  <Text className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#128C7E]">
-                    Ativo
+                <View className="flex-1">
+                  <Text className="text-[11px] font-medium text-[#8B8D97]" numberOfLines={1}>
+                    {formatReminderSchedule(item)}
+                  </Text>
+                  <Text
+                    className="mt-1 pr-2 text-[15px] font-bold text-[#24252C]"
+                    numberOfLines={2}>
+                    {item.message}
                   </Text>
                 </View>
+
+                <View className="ml-2 items-end">
+                  <View className={`rounded-full px-2.5 py-1 ${badge.bgClassName}`}>
+                    <Text className={`text-[10px] font-bold ${badge.textClassName}`}>
+                      {badge.label}
+                    </Text>
+                  </View>
+                  <View className="mt-3">
+                    <ChevronRight size={18} color="#C5C2CE" />
+                  </View>
+                </View>
               </View>
-
-              <Text className="mt-1 text-[12px] text-[#8B8D97]" numberOfLines={1}>
-                {formatReminderSchedule(item)}
-              </Text>
-            </View>
-
-            <ChevronRight size={18} color="#C5C2CE" />
-          </Pressable>
-        ))
+            </Pressable>
+          );
+        })
       )}
 
       <AcaoModal
