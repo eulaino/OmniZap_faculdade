@@ -3,7 +3,7 @@
 
 # OmniZap
 
-**Aplicativo mobile para gerenciar lembretes e acompanhar a operação de um bot integrado ao WhatsApp.**
+Aplicativo mobile para criar, acompanhar e confirmar lembretes enviados pelo WhatsApp.
 
 ![Expo](https://img.shields.io/badge/Expo-54-000020?style=flat-square&logo=expo)
 ![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=flat-square&logo=react)
@@ -12,91 +12,101 @@
 
 </div>
 
-## Visão geral
+## Visão Geral
 
-O OmniZap centraliza autenticação, perfil, indicadores e lembretes associados ao número de WhatsApp do usuário. O aplicativo usa Firebase para identidade e dados do perfil, enquanto uma API HTTP externa fornece o dashboard e as operações de lembretes.
+OmniZap é um app Expo/React Native que conecta uma conta Firebase a uma API de bot para WhatsApp. O usuário cria lembretes pontuais ou recorrentes, acompanha indicadores da operação, confirma pendências vindas do bot e recebe feedback visual quando a conexão com o backend está indisponível.
 
-### Funcionalidades
+## Funcionalidades
 
-- Cadastro e login com e-mail e senha.
-- Onboarding com nome e número de WhatsApp.
-- Sessão persistente com Firebase Auth e AsyncStorage.
-- Dashboard com totais de atendimentos e lembretes.
-- Listagem e atualização automática de lembretes.
-- Criação de lembretes com horários rápidos.
-- Visualização e exclusão de lembretes.
-- Edição do nome do perfil e encerramento da sessão.
-- Interface responsiva com navegação protegida e feedback por toast.
+- Autenticação com e-mail/senha, criação de conta e recuperação de senha.
+- Onboarding com nome e número de WhatsApp do usuário.
+- Persistência de sessão e telefone com Firebase Auth, Realtime Database e AsyncStorage.
+- Dashboard com totais de lembretes e avisos enviados pelo WhatsApp.
+- Listagem de lembretes com filtros por dia, pontuais e recorrentes.
+- Criação de lembretes pontuais, diários e semanais.
+- Edição e exclusão de lembretes com atualização otimista no cache.
+- Confirmação ou cancelamento de pendências geradas pelo bot.
+- Health check do backend com banner de alerta quando o bot está offline.
+- Interface mobile com Expo Router, NativeWind, TanStack Query e feedback por toast.
 
-## Tecnologias
+## Tech Stack
 
-- [Expo](https://expo.dev/) e [React Native](https://reactnative.dev/)
-- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [Expo](https://expo.dev/) 54 e [React Native](https://reactnative.dev/) 0.81
+- [Expo Router](https://docs.expo.dev/router/introduction/) para navegação
 - [TypeScript](https://www.typescriptlang.org/)
 - [Firebase Authentication](https://firebase.google.com/docs/auth) e [Realtime Database](https://firebase.google.com/docs/database)
-- [TanStack Query](https://tanstack.com/query/latest) para cache e sincronização
-- [Axios](https://axios-http.com/) para acesso à API
+- [TanStack Query](https://tanstack.com/query/latest) para cache, polling e invalidação
+- [Axios](https://axios-http.com/) para chamadas HTTP
 - [NativeWind](https://www.nativewind.dev/) e Tailwind CSS
-- React Hook Form, AsyncStorage e React Native Safe Area Context
+- React Hook Form, AsyncStorage, React Native SVG, Lucide e Expo Vector Icons
 
 ## Arquitetura
 
 ```mermaid
 flowchart LR
-    U["Usuário"] --> A["App Expo / React Native"]
-    A --> F["Firebase Auth"]
-    A --> D["Firebase Realtime Database"]
-    A --> S["AsyncStorage"]
-    A --> Q["TanStack Query"]
-    Q --> API["API externa do bot"]
+    U["Usuário"] --> APP["App Expo / React Native"]
+    APP --> AUTH["Firebase Auth"]
+    APP --> DB["Firebase Realtime Database"]
+    APP --> STORE["AsyncStorage"]
+    APP --> QUERY["TanStack Query"]
+    QUERY --> API["API do bot WhatsApp"]
+    API --> BOT["Bot / WhatsApp"]
 ```
 
-- O Firebase Auth controla cadastro, login e sessão.
-- O Realtime Database mantém nome e telefone em `users/{uid}/name`.
-- O telefone também é armazenado localmente para reduzir leituras repetidas.
-- A API externa gerencia dashboard e lembretes.
+- Firebase Auth controla cadastro, login, recuperação de senha e sessão.
+- Realtime Database salva os dados de perfil em `users/{uid}/name`.
+- AsyncStorage guarda `user_phone` para evitar leituras repetidas do telefone.
+- TanStack Query sincroniza dashboard, lembretes, pendências e health check.
+- A API externa é responsável por dashboard, lembretes, pendências e status do bot.
 
-## Pré-requisitos
+## Pré-Requisitos
 
 - [Node.js](https://nodejs.org/) 20 LTS ou superior
 - npm
-- Um projeto no Firebase com Authentication e Realtime Database
-- Backend compatível com os endpoints usados pelo aplicativo
-- Expo Go ou ambiente nativo Android/iOS
+- Projeto Firebase com Authentication e Realtime Database habilitados
+- Backend compatível com os endpoints usados pelo app
+- Expo Go ou ambiente nativo Android/iOS configurado
 
-## Configuração
+## Começando
 
-1. Instale as dependências:
+Instale as dependências:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. Crie um arquivo `.env` na raiz:
+Crie um arquivo `.env` na raiz do projeto:
 
-   ```env
-   EXPO_PUBLIC_FIREBASE_API_KEY=
-   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
-   EXPO_PUBLIC_FIREBASE_DATABASE_URL=
-   EXPO_PUBLIC_FIREBASE_PROJECT_ID=
-   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
-   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-   EXPO_PUBLIC_FIREBASE_APP_ID=
-   EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=
-   ```
+```env
+EXPO_PUBLIC_FIREBASE_API_KEY=
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+EXPO_PUBLIC_FIREBASE_DATABASE_URL=
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+EXPO_PUBLIC_FIREBASE_APP_ID=
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=
+```
 
-3. No Firebase Console:
-   - habilite o provedor **E-mail/senha** em Authentication;
-   - crie o Realtime Database;
-   - copie as credenciais do aplicativo Web para o `.env`.
+No Firebase Console:
+
+1. habilite o provedor Email/senha em Authentication;
+2. crie ou configure o Realtime Database;
+3. copie as credenciais do aplicativo Web para o `.env`.
 
 > [!IMPORTANT]
-> Variáveis com `EXPO_PUBLIC_` são incluídas no bundle do aplicativo. Não coloque chaves privadas ou credenciais administrativas nelas.
+> Variáveis `EXPO_PUBLIC_*` são incluídas no bundle do app. Não coloque chaves privadas, tokens administrativos ou segredos de backend nelas.
 
-4. Configure a URL do backend em [`src/services/api.ts`](./src/services/api.ts).
+Configure a URL da API em [`src/services/api.ts`](./src/services/api.ts):
+
+```ts
+export const api = axios.create({
+  baseURL: 'https://sua-api.example.com',
+});
+```
 
 > [!NOTE]
-> O endereço configurado atualmente usa um túnel ngrok e pode expirar. Substitua-o pela URL ativa da API antes de executar os fluxos de dashboard e lembretes.
+> A URL versionada atualmente usa um túnel ngrok. Esse tipo de endereço pode expirar, então substitua pelo backend ativo antes de testar dashboard, lembretes e pendências.
 
 ## Executando
 
@@ -106,66 +116,92 @@ Inicie o servidor de desenvolvimento:
 npm start
 ```
 
-Outros comandos disponíveis:
+Comandos disponíveis:
 
-| Comando            | Descrição                                  |
-| ------------------ | ------------------------------------------ |
-| `npm run android`  | Compila e executa o projeto Android nativo |
-| `npm run ios`      | Compila e executa o projeto iOS nativo     |
-| `npm run web`      | Executa a versão web                       |
-| `npm run prebuild` | Gera os projetos nativos do Expo           |
-| `npm run lint`     | Verifica ESLint e Prettier                 |
-| `npm run format`   | Aplica correções de lint e formatação      |
+| Command | Description |
+| --- | --- |
+| `npm start` | Inicia o Expo Dev Server |
+| `npm run android` | Compila e executa no Android |
+| `npm run ios` | Compila e executa no iOS |
+| `npm run web` | Executa a versão web |
+| `npm run prebuild` | Gera os projetos nativos do Expo |
+| `npm run lint` | Verifica ESLint e Prettier |
+| `npm run format` | Corrige lint e formatação |
 
-## API esperada
+## Contrato da API
 
-O aplicativo envia o telefone do usuário como identificador da operação.
+O app usa o telefone do usuário (`numero`) como identificador principal das operações do bot.
 
-| Método   | Endpoint                         | Uso                                       |
-| -------- | -------------------------------- | ----------------------------------------- |
-| `GET`    | `/dashboard?numero=...`          | Retorna totais de comandos e atendimentos |
-| `GET`    | `/api/lembretes?numero=...`      | Lista os lembretes                        |
-| `POST`   | `/api/lembrete`                  | Cria um lembrete                          |
-| `DELETE` | `/api/lembretes/{id}?numero=...` | Remove um lembrete                        |
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Verifica se o backend do bot está online |
+| `GET` | `/dashboard?numero=...` | Retorna totais do dashboard |
+| `GET` | `/api/lembretes?numero=...` | Lista lembretes |
+| `POST` | `/api/lembrete` | Cria um lembrete |
+| `PUT` | `/api/lembretes/{id}` | Atualiza um lembrete |
+| `DELETE` | `/api/lembretes/{id}?numero=...` | Remove um lembrete |
+| `GET` | `/api/pendencias?numero=...` | Lista pendências de confirmação |
+| `POST` | `/api/pendencias/{id}/confirmar` | Confirma uma pendência |
+| `POST` | `/api/pendencias/{id}/cancelar` | Cancela uma pendência |
 
-Exemplo de criação:
+Exemplo de payload para criar ou atualizar lembrete:
 
 ```json
 {
   "numero": "5521999999999",
-  "mensagem": "lembrar 18:00 beber agua"
+  "type": "once",
+  "date": "2026-06-17",
+  "time": "18:00",
+  "message": "beber agua"
 }
 ```
 
-## Estrutura do projeto
+Tipos de recorrência suportados pelo app:
+
+| Type | Fields |
+| --- | --- |
+| `once` | `date`, `time`, `message` |
+| `daily` | `time`, `message` |
+| `weekly` | `weekday`, `time`, `message` |
+
+## Estrutura do Projeto
 
 ```text
 app/
-├── (auth)/           # Login e cadastro
-├── (tabs)/           # Home e perfil
-├── _layout.tsx       # Providers e navegação principal
-├── criar-comando.tsx # Criação de lembretes
-└── onboarding.tsx    # Nome e telefone do usuário
+  (auth)/              Login, cadastro e recuperação de senha
+  (tabs)/              Home e perfil
+  _layout.tsx          Providers globais e navegação principal
+  criar-comando.tsx    Criação de lembretes
+  onboarding.tsx       Nome e WhatsApp do usuário
 src/
-├── components/       # Componentes da interface
-├── config/           # Inicialização do Firebase
-├── hooks/            # Consultas do dashboard
-├── modais/           # Modais de ações e perfil
-├── services/         # Cliente HTTP
-└── utils/            # Recuperação do telefone
-assets/               # Logo, ícones, splash e fontes
+  components/          Componentes reutilizáveis da interface
+  config/              Inicialização do Firebase
+  hooks/               Hooks de dashboard, pendências e health check
+  modais/              Modais de perfil e ações de lembrete
+  services/            Cliente HTTP, cache e regras de lembrete
+  utils/               Utilitários de dados do usuário
+assets/                Logo, ícones, splash e fontes
+docs/                  Notas e planos técnicos do projeto
 ```
 
-## Solução de problemas
+## Solução de Problemas
 
-**`process` não é reconhecido pelo TypeScript**
+**Dashboard, lembretes ou pendências não carregam**
 
-Confirme que [`expo-env.d.ts`](./expo-env.d.ts) existe e reinicie o servidor TypeScript do editor.
+Verifique se a API está online, se `baseURL` em `src/services/api.ts` aponta para o backend correto e se o telefone foi salvo no onboarding.
 
-**Dashboard ou lembretes não carregam**
+**Bot aparece como offline**
 
-Verifique se a API está online, se a URL em `src/services/api.ts` está atualizada e se o telefone foi salvo durante o onboarding.
+Confirme se `GET /health` responde em menos de 5 segundos e retorna um status HTTP `2xx`.
 
-**Falha no login ou cadastro**
+**Login ou cadastro falha**
 
-Confirme as variáveis do Firebase, o provedor E-mail/senha e as regras do Realtime Database.
+Confira as variáveis do Firebase, o provedor Email/senha e as regras do Realtime Database.
+
+**Mudanças visuais não aparecem**
+
+Reinicie o Expo com cache limpo:
+
+```bash
+npx expo start --clear
+```
