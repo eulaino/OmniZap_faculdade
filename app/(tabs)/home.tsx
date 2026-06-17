@@ -36,7 +36,7 @@ const surfaceShadow = {
 const pageGradient = ['#FFFFFF', '#FBFFFD', '#F4FFF9', '#F7F3FF'] as const;
 
 const filters: { label: string; value: ReminderListFilter }[] = [
-  { label: 'Todos', value: 'all' },
+  { label: 'Tudo', value: 'all' },
   { label: 'Pontuais', value: 'once' },
   { label: 'Recorrentes', value: 'recurring' },
 ];
@@ -46,10 +46,45 @@ function formatMetric(value: number) {
 }
 
 function getDateSectionTitle(option?: QuickDateOption) {
+  if (!option) return 'Todos os lembretes';
   if (option?.label === 'Hoje') return 'Lembretes de hoje';
   if (option?.label === 'Amanha') return 'Lembretes de amanha';
 
   return `Lembretes de ${option?.weekdayLabel ?? 'dia'}`;
+}
+
+type AllDateCardProps = {
+  onPress: () => void;
+  selected: boolean;
+};
+
+function AllDateCard({ onPress, selected }: AllDateCardProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Mostrar todos os lembretes"
+      className={`mr-3 h-[78px] w-[72px] items-center justify-center rounded-2xl ${
+        selected ? 'bg-[#6135E8]' : 'bg-white'
+      }`}
+      style={selected ? undefined : surfaceShadow}>
+      <Text
+        style={homeFonts.medium}
+        className={`text-[11px] ${selected ? 'text-white/80' : 'text-[#747887]'}`}>
+        Ver
+      </Text>
+      <Text
+        style={homeFonts.black}
+        className={`mt-1 text-[16px] ${selected ? 'text-white' : 'text-[#24252C]'}`}>
+        Todos
+      </Text>
+      <Text
+        style={homeFonts.medium}
+        className={`mt-0.5 text-[11px] ${selected ? 'text-white/75' : 'text-[#8B8D97]'}`}>
+        geral
+      </Text>
+    </Pressable>
+  );
 }
 
 type DateOptionCardProps = {
@@ -142,7 +177,9 @@ export default function Home() {
     usePendingActions();
   const pendingAction = pendingActions[0] ?? null;
   const dateOptions = useMemo(() => getQuickDateOptions(), []);
-  const [selectedDate, setSelectedDate] = useState(() => getQuickDateOptions()[0]?.inputDate);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(
+    () => getQuickDateOptions()[0]?.inputDate
+  );
   const [selectedFilter, setSelectedFilter] = useState<ReminderListFilter>('all');
 
   useEffect(() => {
@@ -276,6 +313,7 @@ export default function Home() {
             showsHorizontalScrollIndicator={false}
             className="-mx-6 mt-3"
             contentContainerClassName="px-6">
+            <AllDateCard selected={!selectedDate} onPress={() => setSelectedDate(undefined)} />
             {dateOptions.map((option) => (
               <DateOptionCard
                 key={option.inputDate}
@@ -319,8 +357,12 @@ export default function Home() {
             <ListaComandos
               filter={selectedFilter}
               selectedDate={selectedDate}
-              emptyTitle="Nenhum lembrete neste dia"
-              emptyDescription="Escolha outra data ou crie um novo lembrete."
+              emptyTitle={selectedDate ? 'Nenhum lembrete neste dia' : 'Nenhum lembrete cadastrado'}
+              emptyDescription={
+                selectedDate
+                  ? 'Escolha outra data ou crie um novo lembrete.'
+                  : 'Crie seu primeiro lembrete para receber no WhatsApp.'
+              }
             />
           </View>
         </ScrollView>
