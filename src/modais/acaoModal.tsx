@@ -1,5 +1,4 @@
 import {
-  Bot,
   CalendarDays,
   Check,
   Clock3,
@@ -10,7 +9,16 @@ import {
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import {
   WEEKDAY_OPTIONS,
@@ -44,11 +52,66 @@ type AcaoModalProps = {
   }) => Promise<void>;
 };
 
+type FieldLabelProps = {
+  icon: React.ReactNode;
+  label: string;
+};
+
+type InfoItemProps = {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+};
+
 const RECURRENCE_OPTIONS: { label: string; value: ReminderRepeatType }[] = [
   { label: 'Uma vez', value: 'once' },
   { label: 'Todo dia', value: 'daily' },
   { label: 'Toda semana', value: 'weekly' },
 ];
+
+const fonts = {
+  regular: { fontFamily: 'Inter_400Regular' },
+  medium: { fontFamily: 'Inter_500Medium' },
+  bold: { fontFamily: 'Inter_700Bold' },
+  black: { fontFamily: 'Inter_900Black' },
+};
+
+const sheetShadow = {
+  shadowColor: '#191622',
+  shadowOffset: { width: 0, height: -10 },
+  shadowOpacity: 0.1,
+  shadowRadius: 24,
+  elevation: 10,
+};
+
+function FieldLabel({ icon, label }: FieldLabelProps) {
+  return (
+    <View className="mb-2.5 flex-row items-center">
+      {icon}
+      <Text
+        style={fonts.bold}
+        className="ml-2 text-[12px] uppercase tracking-[0.12em] text-[#747887]">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function InfoItem({ icon, label, value }: InfoItemProps) {
+  return (
+    <View className="flex-1">
+      <View className="flex-row items-center">
+        {icon}
+        <Text style={fonts.bold} className="ml-2 text-[11px] text-[#8B8D97]">
+          {label}
+        </Text>
+      </View>
+      <Text style={fonts.bold} className="mt-1 text-[14px] leading-5 text-[#24252C]">
+        {value}
+      </Text>
+    </View>
+  );
+}
 
 function AcaoModalComponent({
   visible,
@@ -63,6 +126,7 @@ function AcaoModalComponent({
   weekday = 0,
   isUpdating,
 }: AcaoModalProps) {
+  const { height } = useWindowDimensions();
   const [isEditing, setIsEditing] = useState(false);
   const [draftMessage, setDraftMessage] = useState(message);
   const [draftTime, setDraftTime] = useState(time);
@@ -99,6 +163,7 @@ function AcaoModalComponent({
     time: draftTime,
     weekday: draftWeekday,
   });
+  const currentSchedule = repeatType === 'once' ? dataFormatada : currentSummary;
 
   const hasChanges = useMemo(
     () =>
@@ -151,51 +216,49 @@ function AcaoModalComponent({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 justify-center bg-black/45 px-5">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View className="flex-1 justify-end bg-black/35">
         <Pressable className="absolute inset-0" onPress={onClose} />
 
-        <View className="w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm">
-          <View className="border-b border-slate-200 px-5 pb-4 pt-5">
-            <View className="flex-row items-start justify-between">
-              <View className="mr-3 flex-1 flex-row items-center">
-                <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50">
-                  <Bot size={20} color="#128C7E" />
-                </View>
-
-                <View className="flex-1">
-                  <Text className="text-lg font-extrabold tracking-wide text-slate-900">
-                    {isEditing ? 'Editar lembrete' : 'Detalhes do lembrete'}
-                  </Text>
-                  {isEditing ? (
-                    <Text className="mt-1 text-xs font-medium text-slate-500">
-                      Ajuste quando lembrar e a mensagem.
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-
-              <Pressable
-                onPress={onClose}
-                hitSlop={8}
-                className="h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white">
-                <X size={16} color="#475569" />
-              </Pressable>
-            </View>
+        <View
+          style={[sheetShadow, { maxHeight: Math.round(height * 0.88) }]}
+          className="overflow-hidden rounded-t-[30px] bg-white">
+          <View className="items-center pb-2 pt-3">
+            <View className="h-1.5 w-11 rounded-full bg-[#D8DEE4]" />
           </View>
 
-          <View className="gap-4 px-5 py-5">
-            {isEditing ? (
-              <View className="gap-4">
-                <View className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <View className="mb-3 flex-row items-center">
-                    <Repeat2 size={15} color="#128C7E" />
-                    <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                      Recorrencia
-                    </Text>
-                  </View>
+          <View className="flex-row items-center justify-between px-5 pb-4 pt-1">
+            <View className="mr-3 flex-1">
+              <Text style={fonts.black} className="text-[21px] leading-7 text-[#24252C]">
+                {isEditing ? 'Editar lembrete' : 'Lembrete'}
+              </Text>
+              <Text style={fonts.medium} className="mt-0.5 text-[13px] text-[#8B8D97]">
+                {isEditing ? 'Ajuste o aviso antes de salvar.' : 'Enviado pelo WhatsApp.'}
+              </Text>
+            </View>
 
-                  <View className="flex-row rounded-2xl border border-slate-200 bg-slate-50 p-1">
+            <Pressable
+              onPress={onClose}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar modal"
+              className="h-10 w-10 items-center justify-center rounded-full bg-[#F2F4F7]">
+              <X size={18} color="#747887" />
+            </Pressable>
+          </View>
+
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            enableAutomaticScroll
+            extraScrollHeight={72}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 20 }}>
+            {isEditing ? (
+              <View>
+                <View className="rounded-[24px] bg-[#F7F8FB] p-4">
+                  <FieldLabel icon={<Repeat2 size={15} color="#6135E8" />} label="Frequencia" />
+                  <View className="flex-row rounded-[18px] bg-white p-1">
                     {RECURRENCE_OPTIONS.map((option) => {
                       const selected = draftRepeatType === option.value;
 
@@ -203,13 +266,14 @@ function AcaoModalComponent({
                         <Pressable
                           key={option.value}
                           onPress={() => setDraftRepeatType(option.value)}
-                          className={`flex-1 items-center rounded-xl px-2 py-2.5 ${
-                            selected ? 'bg-[#128C7E]' : 'bg-transparent'
+                          accessibilityRole="button"
+                          accessibilityLabel={`Selecionar ${option.label}`}
+                          className={`flex-1 items-center rounded-[14px] px-2 py-2.5 ${
+                            selected ? 'bg-[#6135E8]' : 'bg-transparent'
                           }`}>
                           <Text
-                            className={`text-[11px] font-bold ${
-                              selected ? 'text-white' : 'text-slate-600'
-                            }`}>
+                            style={fonts.bold}
+                            className={`text-[12px] ${selected ? 'text-white' : 'text-[#747887]'}`}>
                             {option.label}
                           </Text>
                         </Pressable>
@@ -218,27 +282,23 @@ function AcaoModalComponent({
                   </View>
 
                   {draftRepeatType === 'once' ? (
-                    <View
-                      className={`mt-3 rounded-xl border px-3 py-2.5 ${
-                        draftDate.length === 10 && !dateIsValid
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-slate-200 bg-slate-50'
-                      }`}>
-                      <View className="mb-1 flex-row items-center">
-                        <CalendarDays size={14} color="#0284C7" />
-                        <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                          Data
-                        </Text>
-                      </View>
-
+                    <View className="mt-4">
+                      <FieldLabel icon={<CalendarDays size={15} color="#128C7E" />} label="Data" />
                       <TextInput
                         value={draftDate}
                         onChangeText={(value) => setDraftDate(formatReminderDateInput(value))}
                         placeholder="DD/MM/AAAA"
-                        placeholderTextColor="#94a3b8"
+                        placeholderTextColor="#9CA0AA"
                         keyboardType="numeric"
                         maxLength={10}
-                        className="py-0 text-sm font-semibold text-slate-800"
+                        cursorColor="#128C7E"
+                        selectionColor="#128C7E"
+                        style={fonts.medium}
+                        className={`rounded-[18px] border bg-white px-4 py-3 text-[15px] text-[#24252C] ${
+                          draftDate.length === 10 && !dateIsValid
+                            ? 'border-red-300'
+                            : 'border-[#E6E8EE]'
+                        }`}
                       />
                     </View>
                   ) : null}
@@ -252,14 +312,15 @@ function AcaoModalComponent({
                           <Pressable
                             key={option.value}
                             onPress={() => setDraftWeekday(option.value)}
-                            className={`mr-2 mt-2 rounded-full border px-3 py-2 ${
-                              selected
-                                ? 'border-emerald-200 bg-emerald-50'
-                                : 'border-slate-200 bg-slate-50'
+                            accessibilityRole="button"
+                            accessibilityLabel={`Selecionar ${option.label}`}
+                            className={`mr-2 mt-2 rounded-full px-3.5 py-2 ${
+                              selected ? 'bg-[#E7F8F1]' : 'bg-white'
                             }`}>
                             <Text
-                              className={`text-xs font-bold ${
-                                selected ? 'text-emerald-700' : 'text-slate-600'
+                              style={fonts.bold}
+                              className={`text-[13px] ${
+                                selected ? 'text-[#128C7E]' : 'text-[#747887]'
                               }`}>
                               {option.shortLabel}
                             </Text>
@@ -268,154 +329,151 @@ function AcaoModalComponent({
                       })}
                     </View>
                   ) : null}
-                </View>
 
-                <View className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <View className="mb-2 flex-row items-center">
-                    <Clock3 size={15} color="#CA8A04" />
-                    <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                      Horario
-                    </Text>
+                  <View className="mt-4">
+                    <FieldLabel icon={<Clock3 size={15} color="#128C7E" />} label="Horario" />
+                    <TextInput
+                      value={draftTime}
+                      onChangeText={(value) => setDraftTime(formatReminderTimeInput(value))}
+                      placeholder="00:00"
+                      placeholderTextColor="#9CA0AA"
+                      keyboardType="numeric"
+                      maxLength={5}
+                      cursorColor="#128C7E"
+                      selectionColor="#128C7E"
+                      style={fonts.bold}
+                      className={`rounded-[18px] border bg-white px-4 py-3 text-[16px] text-[#24252C] ${
+                        draftTime.length === 5 && !timeIsValid
+                          ? 'border-red-300'
+                          : 'border-[#E6E8EE]'
+                      }`}
+                    />
                   </View>
 
-                  <TextInput
-                    value={draftTime}
-                    onChangeText={(value) => setDraftTime(formatReminderTimeInput(value))}
-                    placeholder="00:00"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="numeric"
-                    maxLength={5}
-                    className={`rounded-2xl border px-4 py-3.5 text-base font-semibold text-slate-900 ${
-                      draftTime.length === 5 && !timeIsValid
-                        ? 'border-red-300 bg-red-50'
-                        : 'border-slate-200 bg-slate-50'
-                    }`}
-                  />
-
-                  {draftTime.length === 5 && !timeIsValid ? (
-                    <Text className="mt-3 text-xs font-bold text-red-600">
-                      Digite um horario entre 00:00 e 23:59.
-                    </Text>
-                  ) : null}
-                  {draftDate.length === 10 && !dateIsValid ? (
-                    <Text className="mt-3 text-xs font-bold text-red-600">
-                      Digite uma data valida.
-                    </Text>
-                  ) : null}
-                </View>
-
-                <View className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <View className="mb-2 flex-row items-center">
-                    <MessageSquareText size={15} color="#4F46E5" />
-                    <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                      Mensagem
-                    </Text>
+                  <View className="mt-4">
+                    <FieldLabel
+                      icon={<MessageSquareText size={15} color="#6135E8" />}
+                      label="Mensagem"
+                    />
+                    <TextInput
+                      value={draftMessage}
+                      onChangeText={setDraftMessage}
+                      placeholder="Ex.: tomar remedio"
+                      placeholderTextColor="#9CA0AA"
+                      autoCapitalize="sentences"
+                      autoCorrect={false}
+                      multiline
+                      cursorColor="#128C7E"
+                      selectionColor="#128C7E"
+                      style={[fonts.medium, { textAlignVertical: 'top' }]}
+                      className="min-h-[78px] rounded-[18px] border border-[#E6E8EE] bg-white px-4 py-3 text-[15px] leading-6 text-[#24252C]"
+                    />
                   </View>
-
-                  <TextInput
-                    value={draftMessage}
-                    onChangeText={setDraftMessage}
-                    placeholder="Ex.: beber agua"
-                    placeholderTextColor="#94a3b8"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base font-semibold text-slate-900"
-                  />
                 </View>
 
-                <View className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <Text className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                    Vai ficar
+                {draftTime.length === 5 && !timeIsValid ? (
+                  <Text style={fonts.bold} className="mt-3 text-[12px] text-red-500">
+                    Digite um horario entre 00:00 e 23:59.
                   </Text>
-                  <Text className="mt-1 text-sm font-semibold text-slate-800">{draftSummary}</Text>
+                ) : null}
+                {draftDate.length === 10 && !dateIsValid ? (
+                  <Text style={fonts.bold} className="mt-3 text-[12px] text-red-500">
+                    Digite uma data valida.
+                  </Text>
+                ) : null}
+
+                <View className="mt-4 rounded-[20px] bg-[#F2FFF8] px-4 py-3">
+                  <Text style={fonts.medium} className="text-[13px] leading-5 text-[#4B675E]">
+                    {draftSummary}
+                  </Text>
                 </View>
-              </View>
-            ) : (
-              <>
-                <View className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <View className="mb-2 flex-row items-center">
-                    <MessageSquareText size={15} color="#4F46E5" />
-                    <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                      Comando
+
+                <View className="mt-4 flex-row gap-3">
+                  <Pressable
+                    onPress={handleCancelEdit}
+                    disabled={isUpdating}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancelar edicao"
+                    className="h-[52px] flex-1 items-center justify-center rounded-[18px] border border-[#E1E5EB] bg-white">
+                    <Text style={fonts.bold} className="text-[14px] text-[#747887]">
+                      Cancelar
                     </Text>
-                  </View>
-                  <Text className="text-base font-bold leading-6 text-slate-900">{message}</Text>
-                </View>
+                  </Pressable>
 
-                <View className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <View className="flex-row items-center justify-between">
-                    <View className="mr-2 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                      <View className="mb-1 flex-row items-center">
-                        <CalendarDays size={14} color="#0284C7" />
-                        <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                          Quando
-                        </Text>
-                      </View>
-                      <Text className="text-sm font-semibold text-slate-800">
-                        {repeatType === 'once' ? dataFormatada : currentSummary}
-                      </Text>
-                    </View>
-
-                    <View className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                      <View className="mb-1 flex-row items-center">
-                        <Clock3 size={14} color="#CA8A04" />
-                        <Text className="ml-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                          Horario
-                        </Text>
-                      </View>
-                      <Text className="text-sm font-semibold text-slate-800">{time}</Text>
-                    </View>
-                  </View>
-                </View>
-              </>
-            )}
-
-            {isEditing ? (
-              <View className="mt-1 flex-row gap-3">
-                <Pressable
-                  onPress={handleCancelEdit}
-                  disabled={isUpdating}
-                  className="flex-1 items-center rounded-2xl border border-slate-300 bg-slate-100 py-3">
-                  <Text className="text-sm font-bold text-slate-700">Cancelar</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={handleSave}
-                  disabled={!canSave}
-                  className={`flex-1 flex-row items-center justify-center rounded-2xl py-3 ${
-                    canSave ? 'bg-[#128C7E]' : 'bg-slate-300'
-                  }`}>
-                  {isUpdating ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <Check size={14} color={canSave ? '#FFFFFF' : '#64748b'} />
-                  )}
-                  <Text
-                    className={`ml-2 text-sm font-bold ${
-                      canSave ? 'text-white' : 'text-slate-600'
+                  <Pressable
+                    onPress={handleSave}
+                    disabled={!canSave}
+                    accessibilityRole="button"
+                    accessibilityLabel="Salvar lembrete"
+                    className={`h-[52px] flex-1 flex-row items-center justify-center rounded-[18px] ${
+                      canSave ? 'bg-[#128C7E]' : 'bg-[#DCE2E8]'
                     }`}>
-                    Salvar
-                  </Text>
-                </Pressable>
+                    {isUpdating ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Check size={16} color={canSave ? '#FFFFFF' : '#8B8D97'} />
+                    )}
+                    <Text
+                      style={fonts.black}
+                      className={`ml-2 text-[14px] ${canSave ? 'text-white' : 'text-[#8B8D97]'}`}>
+                      Salvar
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             ) : (
-              <View className="mt-1 flex-row gap-3">
-                <Pressable
-                  onPress={() => setIsEditing(true)}
-                  className="flex-1 flex-row items-center justify-center rounded-2xl bg-[#128C7E] py-3">
-                  <Pencil size={14} color="#FFFFFF" />
-                  <Text className="ml-2 text-sm font-bold text-white">Editar</Text>
-                </Pressable>
+              <View>
+                <View className="rounded-[24px] bg-[#F7F8FB] p-4">
+                  <FieldLabel
+                    icon={<MessageSquareText size={15} color="#6135E8" />}
+                    label="Mensagem"
+                  />
+                  <Text style={fonts.black} className="text-[20px] leading-7 text-[#24252C]">
+                    {message}
+                  </Text>
 
-                <Pressable
-                  onPress={onDelete}
-                  className="flex-1 flex-row items-center justify-center rounded-2xl bg-red-600 py-3">
-                  <Trash2 size={14} color="#FFFFFF" />
-                  <Text className="ml-2 text-sm font-bold text-white">Deletar</Text>
-                </Pressable>
+                  <View className="my-4 h-px bg-[#E6E8EE]" />
+
+                  <View className="flex-row gap-4">
+                    <InfoItem
+                      icon={<CalendarDays size={15} color="#128C7E" />}
+                      label="Quando"
+                      value={currentSchedule}
+                    />
+                    <InfoItem
+                      icon={<Clock3 size={15} color="#6135E8" />}
+                      label="Horario"
+                      value={time}
+                    />
+                  </View>
+                </View>
+
+                <View className="mt-4 gap-3">
+                  <Pressable
+                    onPress={() => setIsEditing(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Editar lembrete"
+                    className="h-14 flex-row items-center justify-center rounded-[20px] bg-[#128C7E]">
+                    <Pencil size={16} color="#FFFFFF" />
+                    <Text style={fonts.black} className="ml-2 text-[15px] text-white">
+                      Editar lembrete
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={onDelete}
+                    accessibilityRole="button"
+                    accessibilityLabel="Excluir lembrete"
+                    className="h-[52px] flex-row items-center justify-center rounded-[20px] bg-red-50">
+                    <Trash2 size={16} color="#E11D48" />
+                    <Text style={fonts.bold} className="ml-2 text-[14px] text-red-600">
+                      Excluir
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
             )}
-          </View>
+          </KeyboardAwareScrollView>
         </View>
       </View>
     </Modal>
