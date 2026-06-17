@@ -26,6 +26,7 @@ import {
   normalizeReminderType,
   type ReminderRepeatType,
 } from '@/services/reminderEdit';
+import { useAppTheme } from '@/theme/appTheme';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
 
 const reminderCardShadow = {
@@ -166,6 +167,7 @@ function ListaComandosComponent({
   filter = 'all',
   selectedDate,
 }: ListaComandosProps) {
+  const theme = useAppTheme();
   const [selectedItem, setSelectedItem] = useState<LembretesProps | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const queryClient = useQueryClient();
@@ -340,7 +342,7 @@ function ListaComandosComponent({
   if (isLoading) {
     return (
       <View className="items-center py-6">
-        <ActivityIndicator size="small" color="#6135E8" />
+        <ActivityIndicator size="small" color={theme.colors.accent} />
       </View>
     );
   }
@@ -348,8 +350,11 @@ function ListaComandosComponent({
   if (isError) {
     return (
       <View
-        style={reminderCardShadow}
-        className="items-center rounded-2xl border border-red-100 bg-white px-4 py-7">
+        style={[
+          reminderCardShadow,
+          { backgroundColor: theme.colors.card, borderColor: theme.colors.danger },
+        ]}
+        className="items-center rounded-2xl border px-4 py-7">
         <Text className="text-sm font-semibold text-red-700">Erro ao carregar lembretes</Text>
       </View>
     );
@@ -358,9 +363,15 @@ function ListaComandosComponent({
   return (
     <View className="gap-3">
       {!filteredReminders.length ? (
-        <View style={reminderCardShadow} className="items-center rounded-2xl bg-white px-4 py-7">
-          <Text className="text-sm font-semibold text-[#24252C]">{emptyTitle}</Text>
-          <Text className="mt-1 text-center text-xs leading-5 text-[#8B8D97]">
+        <View
+          style={[reminderCardShadow, { backgroundColor: theme.colors.card }]}
+          className="items-center rounded-2xl px-4 py-7">
+          <Text style={{ color: theme.colors.text }} className="text-sm font-semibold">
+            {emptyTitle}
+          </Text>
+          <Text
+            style={{ color: theme.colors.textSoft }}
+            className="mt-1 text-center text-xs leading-5">
             {emptyDescription}
           </Text>
         </View>
@@ -371,20 +382,26 @@ function ListaComandosComponent({
           return (
             <Pressable
               key={item.id}
-              style={reminderCardShadow}
-              className="rounded-2xl bg-white p-4"
+              style={[reminderCardShadow, { backgroundColor: theme.colors.card }]}
+              className="rounded-2xl p-4"
               onPress={() => abrirLembrete(item)}>
               <View className="flex-row items-start">
-                <View className="mr-4 h-11 w-11 items-center justify-center rounded-xl bg-[#E7F8F1]">
-                  <BellRing size={20} color="#128C7E" />
+                <View
+                  className="mr-4 h-11 w-11 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: theme.colors.successMuted }}>
+                  <BellRing size={20} color={theme.colors.success} />
                 </View>
 
                 <View className="flex-1">
-                  <Text className="text-[11px] font-medium text-[#8B8D97]" numberOfLines={1}>
+                  <Text
+                    style={{ color: theme.colors.textSoft }}
+                    className="text-[11px] font-medium"
+                    numberOfLines={1}>
                     {formatReminderSchedule(item)}
                   </Text>
                   <Text
-                    className="mt-1 pr-2 text-[15px] font-bold text-[#24252C]"
+                    style={{ color: theme.colors.text }}
+                    className="mt-1 pr-2 text-[15px] font-bold"
                     numberOfLines={2}>
                     {item.message}
                   </Text>
@@ -397,7 +414,7 @@ function ListaComandosComponent({
                     </Text>
                   </View>
                   <View className="mt-3">
-                    <ChevronRight size={18} color="#C5C2CE" />
+                    <ChevronRight size={18} color={theme.colors.textSoft} />
                   </View>
                 </View>
               </View>

@@ -17,6 +17,7 @@ import Toast from 'react-native-toast-message';
 import { NotificationBellIcon } from '@/components/home/NotificationBellIcon';
 import { getQuickDateOptions, type QuickDateOption } from '@/services/reminderEdit';
 import { dashboardQueryKey, pendingActionsQueryKey } from '@/services/reminderQueries';
+import { useAppTheme } from '@/theme/appTheme';
 
 const homeFonts = {
   medium: { fontFamily: 'Inter_500Medium' },
@@ -32,8 +33,6 @@ const surfaceShadow = {
   shadowRadius: 20,
   elevation: 2,
 };
-
-const pageGradient = ['#FFFFFF', '#FBFFFD', '#F4FFF9', '#F7F3FF'] as const;
 
 const filters: { label: string; value: ReminderListFilter }[] = [
   { label: 'Tudo', value: 'all' },
@@ -59,28 +58,31 @@ type AllDateCardProps = {
 };
 
 function AllDateCard({ onPress, selected }: AllDateCardProps) {
+  const theme = useAppTheme();
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="Mostrar todos os lembretes"
-      className={`mr-3 h-[78px] w-[72px] items-center justify-center rounded-2xl ${
-        selected ? 'bg-[#6135E8]' : 'bg-white'
-      }`}
-      style={selected ? undefined : surfaceShadow}>
+      className="mr-3 h-[78px] w-[72px] items-center justify-center rounded-2xl"
+      style={[
+        selected ? undefined : surfaceShadow,
+        { backgroundColor: selected ? theme.colors.accent : theme.colors.card },
+      ]}>
       <Text
-        style={homeFonts.medium}
-        className={`text-[11px] ${selected ? 'text-white/80' : 'text-[#747887]'}`}>
+        style={[homeFonts.medium, { color: selected ? '#FFFFFFCC' : theme.colors.textMuted }]}
+        className="text-[11px]">
         Ver
       </Text>
       <Text
-        style={homeFonts.black}
-        className={`mt-1 text-[16px] ${selected ? 'text-white' : 'text-[#24252C]'}`}>
+        style={[homeFonts.black, { color: selected ? '#FFFFFF' : theme.colors.text }]}
+        className="mt-1 text-[16px]">
         Todos
       </Text>
       <Text
-        style={homeFonts.medium}
-        className={`mt-0.5 text-[11px] ${selected ? 'text-white/75' : 'text-[#8B8D97]'}`}>
+        style={[homeFonts.medium, { color: selected ? '#FFFFFFBF' : theme.colors.textSoft }]}
+        className="mt-0.5 text-[11px]">
         geral
       </Text>
     </Pressable>
@@ -94,29 +96,31 @@ type DateOptionCardProps = {
 };
 
 function DateOptionCard({ onPress, option, selected }: DateOptionCardProps) {
+  const theme = useAppTheme();
   const [day] = option.value.split('/');
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={option.accessibilityLabel}
-      className={`mr-3 h-[78px] w-[58px] items-center justify-center rounded-2xl ${
-        selected ? 'bg-[#6135E8]' : 'bg-white'
-      }`}
-      style={selected ? undefined : surfaceShadow}>
+      className="mr-3 h-[78px] w-[58px] items-center justify-center rounded-2xl"
+      style={[
+        selected ? undefined : surfaceShadow,
+        { backgroundColor: selected ? theme.colors.accent : theme.colors.card },
+      ]}>
       <Text
-        style={homeFonts.medium}
-        className={`text-[11px] ${selected ? 'text-white/80' : 'text-[#747887]'}`}>
+        style={[homeFonts.medium, { color: selected ? '#FFFFFFCC' : theme.colors.textMuted }]}
+        className="text-[11px]">
         {option.label}
       </Text>
       <Text
-        style={homeFonts.black}
-        className={`mt-1 text-[18px] ${selected ? 'text-white' : 'text-[#24252C]'}`}>
+        style={[homeFonts.black, { color: selected ? '#FFFFFF' : theme.colors.text }]}
+        className="mt-1 text-[18px]">
         {day}
       </Text>
       <Text
-        style={homeFonts.medium}
-        className={`mt-0.5 text-[11px] ${selected ? 'text-white/75' : 'text-[#8B8D97]'}`}>
+        style={[homeFonts.medium, { color: selected ? '#FFFFFFBF' : theme.colors.textSoft }]}
+        className="mt-0.5 text-[11px]">
         {option.weekdayLabel}
       </Text>
     </Pressable>
@@ -130,17 +134,18 @@ type FilterChipProps = {
 };
 
 function FilterChip({ label, onPress, selected }: FilterChipProps) {
+  const theme = useAppTheme();
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Filtrar por ${label}`}
-      className={`mr-3 h-10 min-w-[86px] items-center justify-center rounded-xl px-4 ${
-        selected ? 'bg-[#6135E8]' : 'bg-[#EEE7FF]'
-      }`}>
+      className="mr-3 h-10 min-w-[86px] items-center justify-center rounded-xl px-4"
+      style={{ backgroundColor: selected ? theme.colors.accent : theme.colors.accentMuted }}>
       <Text
-        style={homeFonts.bold}
-        className={`text-[12px] ${selected ? 'text-white' : 'text-[#6135E8]'}`}>
+        style={[homeFonts.bold, { color: selected ? '#FFFFFF' : theme.colors.accent }]}
+        className="text-[12px]">
         {label}
       </Text>
     </Pressable>
@@ -157,13 +162,23 @@ function formatPendingConfirmationLabel(total: number) {
   return `${formatMetric(total)} ${total === 1 ? 'lembrete' : 'lembretes'} aguardando confirmacao no WhatsApp`;
 }
 
-function AgendaSummary({ isFetching, totalPendingConfirmations, totalReminders }: AgendaSummaryProps) {
+function AgendaSummary({
+  isFetching,
+  totalPendingConfirmations,
+  totalReminders,
+}: AgendaSummaryProps) {
+  const theme = useAppTheme();
+
   return (
-    <View className="mt-6 rounded-2xl bg-white px-4 py-3" style={surfaceShadow}>
-      <Text style={homeFonts.bold} className="text-[13px] text-[#24252C]">
+    <View
+      className="mt-6 rounded-2xl px-4 py-3"
+      style={[surfaceShadow, { backgroundColor: theme.colors.card }]}>
+      <Text style={[homeFonts.bold, { color: theme.colors.text }]} className="text-[13px]">
         {formatMetric(totalReminders)} lembretes ativos
       </Text>
-      <Text style={homeFonts.medium} className="mt-1 text-[12px] text-[#8B8D97]">
+      <Text
+        style={[homeFonts.medium, { color: theme.colors.textSoft }]}
+        className="mt-1 text-[12px]">
         {isFetching
           ? 'Atualizando dados do WhatsApp...'
           : formatPendingConfirmationLabel(totalPendingConfirmations)}
@@ -173,6 +188,7 @@ function AgendaSummary({ isFetching, totalPendingConfirmations, totalReminders }
 }
 
 export default function Home() {
+  const theme = useAppTheme();
   const user = auth.currentUser;
   const [userName, setUserName] = useState('');
   const [loadingName, setLoadingName] = useState(true);
@@ -251,9 +267,9 @@ export default function Home() {
 
   if (loadingName || isLoading) {
     return (
-      <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#6135E8" />
+          <ActivityIndicator size="large" color={theme.colors.accent} />
         </View>
       </LinearGradient>
     );
@@ -262,9 +278,9 @@ export default function Home() {
   if (!user) return null;
 
   return (
-    <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+    <LinearGradient colors={theme.gradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
       <SafeAreaView className="flex-1" edges={['top']}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar backgroundColor={theme.colors.statusBar} barStyle={theme.statusBarStyle} />
 
         {botOffline ? (
           <BotHealthBanner
@@ -279,27 +295,33 @@ export default function Home() {
           contentContainerClassName="px-6 pb-28 pt-5"
           showsVerticalScrollIndicator={false}>
           <View className="flex-row items-center justify-between">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-[#159DEA]">
+            <View
+              className="h-11 w-11 items-center justify-center rounded-full"
+              style={{ backgroundColor: theme.colors.secondary }}>
               <Text style={homeFonts.black} className="text-[18px] text-white">
                 {avatarLetter}
               </Text>
             </View>
 
             <View className="items-center">
-              <Text style={homeFonts.black} className="text-[20px] leading-6 text-[#24252C]">
+              <Text
+                style={[homeFonts.black, { color: theme.colors.text }]}
+                className="text-[20px] leading-6">
                 Meus lembretes
               </Text>
-              <Text style={homeFonts.medium} className="mt-1 text-[12px] text-[#8B8D97]">
+              <Text
+                style={[homeFonts.medium, { color: theme.colors.textSoft }]}
+                className="mt-1 text-[12px]">
                 {displayName}
               </Text>
             </View>
 
             <Pressable
-              style={surfaceShadow}
-              className="relative h-11 w-11 items-center justify-center rounded-2xl bg-white"
+              style={[surfaceShadow, { backgroundColor: theme.colors.card }]}
+              className="relative h-11 w-11 items-center justify-center rounded-2xl"
               accessibilityRole="button"
               accessibilityLabel="Notificacoes">
-              <NotificationBellIcon size={24} />
+              <NotificationBellIcon size={24} color={theme.colors.text} />
               {hasAlert ? (
                 <View className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-[#6135E8]" />
               ) : null}
@@ -307,7 +329,9 @@ export default function Home() {
           </View>
 
           <View className="mt-8">
-            <Text style={homeFonts.bold} className="text-[13px] text-[#747887]">
+            <Text
+              style={[homeFonts.bold, { color: theme.colors.textMuted }]}
+              className="text-[13px]">
               Escolha o dia
             </Text>
           </View>
@@ -351,10 +375,12 @@ export default function Home() {
 
           <View className="mt-6">
             <View className="mb-3 flex-row items-center justify-between">
-              <Text style={homeFonts.black} className="text-[19px] text-[#24252C]">
+              <Text style={[homeFonts.black, { color: theme.colors.text }]} className="text-[19px]">
                 {getDateSectionTitle(selectedDateOption)}
               </Text>
-              <Text style={homeFonts.bold} className="text-[12px] text-[#8B8D97]">
+              <Text
+                style={[homeFonts.bold, { color: theme.colors.textSoft }]}
+                className="text-[12px]">
                 Toque para editar
               </Text>
             </View>

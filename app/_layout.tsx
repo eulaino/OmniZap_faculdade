@@ -13,6 +13,7 @@ import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppThemeProvider, useAppTheme } from '@/theme/appTheme';
 
 const queryClient = new QueryClient();
 
@@ -37,7 +38,7 @@ appTextInput.defaultProps.style = [
   appTextInput.defaultProps.style,
 ];
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -46,11 +47,14 @@ export default function RootLayout() {
     Inter_800ExtraBold,
     Inter_900Black,
   });
+  const theme = useAppTheme();
 
   if (!fontsLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#EAF7F1]">
-        <ActivityIndicator size="large" color="#128C7E" />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -68,5 +72,13 @@ export default function RootLayout() {
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootLayoutContent />
+    </AppThemeProvider>
   );
 }

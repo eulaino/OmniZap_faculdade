@@ -9,23 +9,17 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [
-      "expo-router",
-      "expo-font",
-      "@react-native-community/datetimepicker"
-    ],
+    "plugins": ["expo-router", "expo-font", "@react-native-community/datetimepicker"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "scheme": "main",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },

@@ -13,6 +13,7 @@ import {
   activateWhatsAppFromApp,
   getWhatsAppActivationErrorMessage,
 } from '@/services/whatsappActivation';
+import { useAppTheme } from '@/theme/appTheme';
 import { auth, database } from '../src/config/firebase';
 
 type SaveState = 'idle' | 'error' | 'success';
@@ -43,6 +44,7 @@ function aplicarMascaraTelefone(value: string) {
 }
 
 export default function Onboarding() {
+  const theme = useAppTheme();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -138,8 +140,11 @@ export default function Onboarding() {
         : 'border-[#C8DAD4]';
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7FCFA]" edges={['top']}>
-      <StatusBar backgroundColor="#128C7E" barStyle="light-content" />
+    <SafeAreaView
+      className="flex-1"
+      edges={['top']}
+      style={{ backgroundColor: theme.colors.background }}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle="light-content" />
 
       <View className="absolute left-0 right-0 top-0 h-[336px] overflow-hidden">
         <AuthWaveBackdropSvg width={430} height={336} />
@@ -160,30 +165,37 @@ export default function Onboarding() {
         <View className="w-full max-w-[430px] flex-1 self-center">
           <View className="flex-1">
             <View>
-              <Text style={authFonts.black} className="text-[34px] leading-10 text-[#1F2D29]">
+              <Text
+                style={[authFonts.black, { color: theme.colors.text }]}
+                className="text-[34px] leading-10">
                 {title}
               </Text>
               <View className="mt-2 h-1 w-16 rounded-full bg-[#25D366]" />
 
               <Text
-                style={authFonts.semibold}
-                className="mt-4 text-[15px] leading-6 text-[#4B675E]">
+                className="mt-4 text-[15px] leading-6"
+                style={[authFonts.semibold, { color: theme.colors.textMuted }]}>
                 {subtitle}
               </Text>
 
               <View className="mt-7 gap-5">
                 <View>
-                  <Text style={authFonts.black} className="text-[15px] text-[#38584F]">
+                  <Text
+                    style={[authFonts.black, { color: theme.colors.textMuted }]}
+                    className="text-[15px]">
                     Nome de exibicao
                   </Text>
 
                   <View className={`mt-2 h-10 flex-row items-center border-b ${nameLineTone}`}>
-                    <UserRound size={16} color={saveState === 'error' ? '#E11D48' : '#6B8A81'} />
+                    <UserRound
+                      size={16}
+                      color={saveState === 'error' ? theme.colors.danger : theme.colors.textSoft}
+                    />
                     <TextInput
                       allowFontScaling={false}
-                      cursorColor="#128C7E"
+                      cursorColor={theme.colors.primary}
                       importantForAutofill="no"
-                      selectionColor="#128C7E"
+                      selectionColor={theme.colors.primary}
                       textContentType="none"
                       underlineColorAndroid="transparent"
                       value={name}
@@ -197,30 +209,35 @@ export default function Onboarding() {
                       }}
                       onBlur={() => setFocusedField(null)}
                       placeholder="Ex.: João Fernandes"
-                      placeholderTextColor="#8FA39C"
+                      placeholderTextColor={theme.colors.textSoft}
                       autoCapitalize="words"
                       autoCorrect={false}
                       returnKeyType="next"
                       accessibilityLabel="Digite seu nome de exibicao"
-                      style={authFonts.semibold}
-                      className="ml-2 flex-1 py-1 text-[15px] text-[#233832]"
+                      style={[authFonts.semibold, { color: theme.colors.text }]}
+                      className="ml-2 flex-1 py-1 text-[15px]"
                     />
                   </View>
                 </View>
 
                 <View>
-                  <Text style={authFonts.black} className="text-[15px] text-[#38584F]">
+                  <Text
+                    style={[authFonts.black, { color: theme.colors.textMuted }]}
+                    className="text-[15px]">
                     WhatsApp
                   </Text>
 
                   <View className={`mt-2 h-10 flex-row items-center border-b ${phoneLineTone}`}>
-                    <Phone size={16} color={saveState === 'error' ? '#E11D48' : '#6B8A81'} />
+                    <Phone
+                      size={16}
+                      color={saveState === 'error' ? theme.colors.danger : theme.colors.textSoft}
+                    />
                     <TextInput
                       allowFontScaling={false}
                       autoComplete="off"
-                      cursorColor="#128C7E"
+                      cursorColor={theme.colors.primary}
                       importantForAutofill="no"
-                      selectionColor="#128C7E"
+                      selectionColor={theme.colors.primary}
                       textContentType="none"
                       underlineColorAndroid="transparent"
                       value={phone}
@@ -234,29 +251,31 @@ export default function Onboarding() {
                       }}
                       onBlur={() => setFocusedField(null)}
                       placeholder="Ex.: 5521990558030"
-                      placeholderTextColor="#8FA39C"
+                      placeholderTextColor={theme.colors.textSoft}
                       keyboardType="phone-pad"
                       autoCapitalize="none"
                       autoCorrect={false}
                       returnKeyType="done"
                       onSubmitEditing={handleSaveName}
                       accessibilityLabel="Digite seu numero de WhatsApp"
-                      style={authFonts.semibold}
-                      className="ml-2 flex-1 py-1 text-[15px] text-[#233832]"
+                      style={[authFonts.semibold, { color: theme.colors.text }]}
+                      className="ml-2 flex-1 py-1 text-[15px]"
                     />
                   </View>
                 </View>
 
                 {feedbackMessage ? (
                   <View
-                    className={`rounded-xl border px-3 py-2.5 ${saveState === 'success'
-                      ? 'border-emerald-200 bg-emerald-50'
-                      : 'border-rose-200 bg-rose-50'
-                      }`}>
+                    className={`rounded-xl border px-3 py-2.5 ${
+                      saveState === 'success'
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : 'border-rose-200 bg-rose-50'
+                    }`}>
                     <Text
                       style={authFonts.bold}
-                      className={`text-center text-[13px] leading-5 ${saveState === 'success' ? 'text-emerald-700' : 'text-rose-700'
-                        }`}>
+                      className={`text-center text-[13px] leading-5 ${
+                        saveState === 'success' ? 'text-emerald-700' : 'text-rose-700'
+                      }`}>
                       {feedbackMessage}
                     </Text>
                   </View>
@@ -271,8 +290,10 @@ export default function Onboarding() {
                 accessibilityRole="button"
                 accessibilityLabel="Salvar perfil e entrar"
                 accessibilityState={{ disabled: !canSubmit, busy: loading }}
-                className={`h-14 flex-row items-center justify-center gap-2 rounded-2xl ${!canSubmit ? 'bg-[#128C7E]/55' : 'bg-[#128C7E] active:bg-[#0f766e]'
-                  }`}>
+                className="h-14 flex-row items-center justify-center gap-2 rounded-2xl"
+                style={{
+                  backgroundColor: canSubmit ? theme.colors.primary : `${theme.colors.primary}88`,
+                }}>
                 {loading ? (
                   <>
                     <ActivityIndicator color="#ffffff" />
@@ -295,8 +316,8 @@ export default function Onboarding() {
               </Pressable>
 
               <Text
-                style={authFonts.semibold}
-                className="mt-5 text-center text-[13px] leading-5 text-[#7A8D87]">
+                style={[authFonts.semibold, { color: theme.colors.textSoft }]}
+                className="mt-5 text-center text-[13px] leading-5">
                 Use o WhatsApp em que voce quer receber seus lembretes.
               </Text>
             </View>

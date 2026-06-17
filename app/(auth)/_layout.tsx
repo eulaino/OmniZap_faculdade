@@ -3,8 +3,10 @@ import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../../src/config/firebase';
+import { useAppTheme } from '@/theme/appTheme';
 
 export default function AuthLayout() {
+  const theme = useAppTheme();
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
@@ -18,8 +20,10 @@ export default function AuthLayout() {
 
   if (initializing) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#f97316" />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }

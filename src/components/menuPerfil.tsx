@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useAppTheme } from '@/theme/appTheme';
 
 type ModalProps = {
   userName: string | null;
@@ -31,8 +32,9 @@ async function handleLogout() {
 }
 
 function MenuRow({ icon, title, subtitle, badge, danger, onPress }: MenuRowProps) {
-  const iconColor = danger ? '#E11D48' : '#128C7E';
-  const iconBg = danger ? 'bg-red-50' : 'bg-[#E7F8F1]';
+  const theme = useAppTheme();
+  const iconColor = danger ? theme.colors.danger : theme.colors.primary;
+  const iconBg = danger ? '#3A1720' : theme.colors.successMuted;
 
   return (
     <Pressable
@@ -40,44 +42,54 @@ function MenuRow({ icon, title, subtitle, badge, danger, onPress }: MenuRowProps
       accessibilityRole="button"
       accessibilityLabel={title}
       className="flex-row items-center px-4 py-4">
-      <View className={`mr-3 h-11 w-11 items-center justify-center rounded-[18px] ${iconBg}`}>
+      <View
+        className="mr-3 h-11 w-11 items-center justify-center rounded-[18px]"
+        style={{ backgroundColor: iconBg }}>
         <Ionicons name={icon} size={20} color={iconColor} />
       </View>
 
       <View className="flex-1">
         <View className="flex-row items-center">
           <Text
-            style={fonts.bold}
-            className={`text-[15px] ${danger ? 'text-red-600' : 'text-[#24252C]'}`}>
+            style={[fonts.bold, { color: danger ? theme.colors.danger : theme.colors.text }]}
+            className="text-[15px]">
             {title}
           </Text>
 
           {badge ? (
-            <View className="ml-2 rounded-full bg-[#EEE7FF] px-2 py-0.5">
-              <Text style={fonts.bold} className="text-[10px] text-[#6135E8]">
+            <View
+              className="ml-2 rounded-full px-2 py-0.5"
+              style={{ backgroundColor: theme.colors.accentMuted }}>
+              <Text style={[fonts.bold, { color: theme.colors.accent }]} className="text-[10px]">
                 {badge}
               </Text>
             </View>
           ) : null}
         </View>
 
-        <Text style={fonts.medium} className="mt-0.5 text-[12px] text-[#8B8D97]">
+        <Text
+          style={[fonts.medium, { color: theme.colors.textSoft }]}
+          className="mt-0.5 text-[12px]">
           {subtitle}
         </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color="#B4B8C2" />
+      <Ionicons name="chevron-forward" size={18} color={theme.colors.textSoft} />
     </Pressable>
   );
 }
 
 function Divider() {
-  return <View className="mx-4 h-px bg-[#EEF1F4]" />;
+  const theme = useAppTheme();
+
+  return <View className="mx-4 h-px" style={{ backgroundColor: theme.colors.border }} />;
 }
 
 export function MenuPerfil({ userName }: ModalProps) {
+  const theme = useAppTheme();
+
   return (
-    <View className="overflow-hidden rounded-[28px] bg-white">
+    <View className="overflow-hidden rounded-[28px]" style={{ backgroundColor: theme.colors.card }}>
       <MenuRow icon="chatbubbles-outline" title="Chats" subtitle="Minhas conversas" />
       <Divider />
 

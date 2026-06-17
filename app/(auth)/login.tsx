@@ -12,6 +12,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react-native';
 
 import { AuthWaveBackdropSvg } from '@/components/auth/AuthWaveBackdropSvg';
+import { useAppTheme } from '@/theme/appTheme';
 import { auth } from '../../src/config/firebase';
 
 type FormData = {
@@ -33,6 +34,7 @@ const authFonts = {
 };
 
 export default function LoginPage() {
+  const theme = useAppTheme();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -146,8 +148,11 @@ export default function LoginPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F7FCFA]" edges={['top']}>
-      <StatusBar backgroundColor="#128C7E" barStyle="light-content" />
+    <SafeAreaView
+      className="flex-1"
+      edges={['top']}
+      style={{ backgroundColor: theme.colors.background }}>
+      <StatusBar backgroundColor={theme.colors.primary} barStyle="light-content" />
 
       <View className="absolute left-0 right-0 top-0 h-[336px] overflow-hidden">
         <AuthWaveBackdropSvg width={430} height={336} />
@@ -168,14 +173,18 @@ export default function LoginPage() {
         <View className="w-full max-w-[430px] flex-1 self-center">
           <View className="flex-1">
             <View>
-              <Text style={authFonts.black} className="text-[34px] leading-10 text-[#1F2D29]">
+              <Text
+                style={[authFonts.black, { color: theme.colors.text }]}
+                className="text-[34px] leading-10">
                 {title}
               </Text>
               <View className="mt-2 h-1 w-16 rounded-full bg-[#25D366]" />
 
               <View className="mt-7 gap-5">
                 <View>
-                  <Text style={authFonts.black} className="text-[15px] text-[#38584F]">
+                  <Text
+                    style={[authFonts.black, { color: theme.colors.textMuted }]}
+                    className="text-[15px]">
                     E-mail
                   </Text>
                   <Controller
@@ -190,14 +199,17 @@ export default function LoginPage() {
                     }}
                     render={({ field: { value, onChange } }) => (
                       <View className={`mt-2 h-9 flex-row items-center border-b ${emailLineTone}`}>
-                        <Mail size={16} color={errors.email ? '#E11D48' : '#6B8A81'} />
+                        <Mail
+                          size={16}
+                          color={errors.email ? theme.colors.danger : theme.colors.textSoft}
+                        />
                         <TextInput
                           allowFontScaling={false}
-                          cursorColor="#128C7E"
-                          selectionColor="#128C7E"
+                          cursorColor={theme.colors.primary}
+                          selectionColor={theme.colors.primary}
                           underlineColorAndroid="transparent"
                           placeholder="seu@email.com"
-                          placeholderTextColor="#8FA39C"
+                          placeholderTextColor={theme.colors.textSoft}
                           value={value}
                           onChangeText={(text) => {
                             onChange(text);
@@ -212,8 +224,8 @@ export default function LoginPage() {
                           onBlur={() =>
                             setFocusedField((previous) => (previous === 'email' ? null : previous))
                           }
-                          style={authFonts.semibold}
-                          className="ml-2 flex-1 py-1 text-[15px] text-[#233832]"
+                          style={[authFonts.semibold, { color: theme.colors.text }]}
+                          className="ml-2 flex-1 py-1 text-[15px]"
                         />
                       </View>
                     )}
@@ -226,7 +238,9 @@ export default function LoginPage() {
                 </View>
 
                 <View>
-                  <Text style={authFonts.black} className="text-[15px] text-[#38584F]">
+                  <Text
+                    style={[authFonts.black, { color: theme.colors.textMuted }]}
+                    className="text-[15px]">
                     Senha
                   </Text>
                   <Controller
@@ -242,16 +256,19 @@ export default function LoginPage() {
                     render={({ field: { value, onChange } }) => (
                       <View
                         className={`mt-2 h-10 flex-row items-center border-b ${passwordLineTone}`}>
-                        <LockKeyhole size={16} color={errors.password ? '#E11D48' : '#6B8A81'} />
+                        <LockKeyhole
+                          size={16}
+                          color={errors.password ? theme.colors.danger : theme.colors.textSoft}
+                        />
                         <TextInput
                           allowFontScaling={false}
-                          cursorColor="#128C7E"
+                          cursorColor={theme.colors.primary}
                           importantForAutofill="no"
-                          selectionColor="#128C7E"
+                          selectionColor={theme.colors.primary}
                           textContentType="none"
                           underlineColorAndroid="transparent"
                           placeholder="sua senha"
-                          placeholderTextColor="#8FA39C"
+                          placeholderTextColor={theme.colors.textSoft}
                           value={value}
                           onChangeText={(text) => {
                             onChange(text);
@@ -265,8 +282,8 @@ export default function LoginPage() {
                               previous === 'password' ? null : previous
                             )
                           }
-                          style={authFonts.semibold}
-                          className="ml-2 flex-1 py-1 text-[15px] text-[#233832]"
+                          style={[authFonts.semibold, { color: theme.colors.text }]}
+                          className="ml-2 flex-1 py-1 text-[15px]"
                         />
                         <Pressable
                           onPress={() => setShowPassword(!showPassword)}
@@ -274,9 +291,9 @@ export default function LoginPage() {
                           accessibilityRole="button"
                           accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}>
                           {showPassword ? (
-                            <EyeOff size={16} color="#6B8A81" />
+                            <EyeOff size={16} color={theme.colors.textSoft} />
                           ) : (
-                            <Eye size={16} color="#6B8A81" />
+                            <Eye size={16} color={theme.colors.textSoft} />
                           )}
                         </Pressable>
                       </View>
@@ -293,7 +310,9 @@ export default function LoginPage() {
                   <View className="mt-1 flex-row items-center justify-between">
                     <View className="flex-row items-center">
                       <View className="mr-2 h-4 w-4 rounded border border-[#128C7E] bg-[#128C7E]" />
-                      <Text style={authFonts.black} className="text-[13px] text-[#4B675E]">
+                      <Text
+                        style={[authFonts.black, { color: theme.colors.textMuted }]}
+                        className="text-[13px]">
                         Sessao segura
                       </Text>
                     </View>
@@ -342,7 +361,10 @@ export default function LoginPage() {
                 accessibilityState={{ disabled: busy, busy: loading }}
                 className={`h-14 items-center justify-center rounded-2xl ${
                   busy ? 'bg-[#128C7E]/55' : 'bg-[#128C7E] active:bg-[#0f766e]'
-                }`}>
+                }`}
+                style={{
+                  backgroundColor: busy ? `${theme.colors.primary}88` : theme.colors.primary,
+                }}>
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -353,11 +375,15 @@ export default function LoginPage() {
               </Pressable>
 
               <View className="mt-6 flex-row justify-center">
-                <Text style={authFonts.semibold} className="text-[14px] text-[#7A8D87]">
+                <Text
+                  style={[authFonts.semibold, { color: theme.colors.textSoft }]}
+                  className="text-[14px]">
                   {footerPrefix}{' '}
                 </Text>
                 <Pressable onPress={switchMode} accessibilityRole="button">
-                  <Text style={authFonts.black} className="text-[14px] text-[#128C7E]">
+                  <Text
+                    style={[authFonts.black, { color: theme.colors.primary }]}
+                    className="text-[14px]">
                     {footerAction}
                   </Text>
                 </Pressable>

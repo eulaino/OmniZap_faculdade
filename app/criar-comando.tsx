@@ -35,6 +35,7 @@ import {
   isReminderTimeValid,
   type ReminderRepeatType,
 } from '@/services/reminderEdit';
+import { useAppTheme } from '@/theme/appTheme';
 import { buscarTelefoneFirebase } from '@/utils/buscarTelefoneFirebase';
 
 type CriarLembreteParams = {
@@ -56,8 +57,6 @@ const QUICK_DATE_SHORTCUTS = [
   { label: 'Amanha', days: 1 },
   { label: '+7 dias', days: 7 },
 ];
-
-const pageGradient = ['#FFFFFF', '#FBFFFD', '#F3FFF8', '#F7F3FF'] as const;
 
 const panelShadow = {
   shadowColor: '#191622',
@@ -105,6 +104,7 @@ async function criarLembreteApi({
 }
 
 export default function CriarComando() {
+  const theme = useAppTheme();
   const [textComando, setTextComando] = useState('');
   const [horaTexto, setHoraTexto] = useState('');
   const [dateTexto, setDateTexto] = useState(addDaysToInputDate(0));
@@ -231,9 +231,9 @@ export default function CriarComando() {
   }
 
   return (
-    <LinearGradient colors={pageGradient} locations={[0, 0.38, 0.76, 1]} style={{ flex: 1 }}>
+    <LinearGradient colors={theme.gradient} locations={[0, 0.38, 0.76, 1]} style={{ flex: 1 }}>
       <SafeAreaView className="flex-1" edges={['top']}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar backgroundColor={theme.colors.statusBar} barStyle={theme.statusBarStyle} />
 
         <KeyboardAwareScrollView
           enableOnAndroid
@@ -257,8 +257,8 @@ export default function CriarComando() {
               </Pressable>
 
               <Text
-                style={{ fontFamily: 'Inter_900Black' }}
-                className="text-center text-[20px] leading-6 text-[#24252C]">
+                style={{ fontFamily: 'Inter_900Black', color: theme.colors.text }}
+                className="text-center text-[20px] leading-6">
                 Novo lembrete
               </Text>
 
@@ -267,35 +267,39 @@ export default function CriarComando() {
 
             <View className="mt-7">
               <Text
-                style={{ fontFamily: 'Inter_900Black' }}
-                className="text-[31px] leading-9 text-[#24252C]">
+                style={{ fontFamily: 'Inter_900Black', color: theme.colors.text }}
+                className="text-[31px] leading-9">
                 O que voce quer lembrar?
               </Text>
               <Text
-                style={{ fontFamily: 'Inter_400Regular' }}
-                className="mt-3 text-[15px] leading-6 text-[#747887]">
+                style={{ fontFamily: 'Inter_400Regular', color: theme.colors.textMuted }}
+                className="mt-3 text-[15px] leading-6">
                 Crie um aviso simples e receba no WhatsApp no horario certo.
               </Text>
             </View>
 
-            <View className="mt-6 rounded-[28px] bg-white p-5" style={panelShadow}>
+            <View
+              className="mt-6 rounded-[28px] p-5"
+              style={[panelShadow, { backgroundColor: theme.colors.card }]}>
               <View>
                 <Text
-                  style={{ fontFamily: 'Inter_700Bold' }}
-                  className="text-[15px] text-[#24252C]">
+                  style={{ fontFamily: 'Inter_700Bold', color: theme.colors.text }}
+                  className="text-[15px]">
                   Mensagem
                 </Text>
                 <View
-                  className={`mt-3 rounded-[22px] border px-4 py-1 ${
-                    comandoComHorario
-                      ? 'border-red-400 bg-red-50'
+                  className="mt-3 rounded-[22px] border px-4 py-1"
+                  style={{
+                    backgroundColor: comandoComHorario ? '#FFF1F2' : theme.colors.input,
+                    borderColor: comandoComHorario
+                      ? '#f87171'
                       : campoFocado === 'comando'
-                        ? 'border-[#6135E8] bg-white'
-                        : 'border-[#E6E8EE] bg-[#FBFCFD]'
-                  }`}>
+                        ? theme.colors.accent
+                        : theme.colors.border,
+                  }}>
                   <TextInput
                     placeholder="Ex.: tomar remedio"
-                    placeholderTextColor="#9CA0AA"
+                    placeholderTextColor={theme.colors.textSoft}
                     autoCapitalize="sentences"
                     autoCorrect={false}
                     value={textComando}
@@ -304,8 +308,8 @@ export default function CriarComando() {
                     onBlur={() =>
                       setCampoFocado((valorAtual) => (valorAtual === 'comando' ? null : valorAtual))
                     }
-                    style={{ fontFamily: 'Inter_400Regular' }}
-                    className="min-h-[54px] text-[16px] text-[#24252C]"
+                    className="min-h-[54px] text-[16px]"
+                    style={{ fontFamily: 'Inter_400Regular', color: theme.colors.text }}
                   />
                 </View>
 
@@ -320,11 +324,13 @@ export default function CriarComando() {
 
               <View className="mt-6">
                 <Text
-                  style={{ fontFamily: 'Inter_700Bold' }}
-                  className="text-[15px] text-[#24252C]">
+                  style={{ fontFamily: 'Inter_700Bold', color: theme.colors.text }}
+                  className="text-[15px]">
                   Frequencia
                 </Text>
-                <View className="mt-3 flex-row rounded-[20px] bg-[#F2F4F7] p-1">
+                <View
+                  className="mt-3 flex-row rounded-[20px] p-1"
+                  style={{ backgroundColor: theme.colors.cardMuted }}>
                   {RECURRENCE_OPTIONS.map((option) => {
                     const selected = repeatType === option.value;
 
@@ -338,8 +344,11 @@ export default function CriarComando() {
                           selected ? 'bg-[#6135E8]' : 'bg-transparent'
                         }`}>
                         <Text
-                          style={{ fontFamily: 'Inter_700Bold' }}
-                          className={`text-[12px] ${selected ? 'text-white' : 'text-[#747887]'}`}>
+                          style={{
+                            fontFamily: 'Inter_700Bold',
+                            color: selected ? '#FFFFFF' : theme.colors.textMuted,
+                          }}
+                          className="text-[12px]">
                           {option.label}
                         </Text>
                       </Pressable>
@@ -352,41 +361,48 @@ export default function CriarComando() {
                 <View className="mt-6">
                   <View className="flex-row items-center justify-between">
                     <Text
-                      style={{ fontFamily: 'Inter_700Bold' }}
-                      className="text-[15px] text-[#24252C]">
+                      style={{ fontFamily: 'Inter_700Bold', color: theme.colors.text }}
+                      className="text-[15px]">
                       Data
                     </Text>
                     <Pressable
                       onPress={abrirCalendario}
                       accessibilityRole="button"
                       accessibilityLabel="Escolher data no calendario"
-                      className="flex-row items-center rounded-full bg-[#EEE7FF] px-3 py-2">
-                      <Ionicons name="calendar-number-outline" size={15} color="#6135E8" />
+                      className="flex-row items-center rounded-full px-3 py-2"
+                      style={{ backgroundColor: theme.colors.accentMuted }}>
+                      <Ionicons
+                        name="calendar-number-outline"
+                        size={15}
+                        color={theme.colors.accent}
+                      />
                       <Text
-                        style={{ fontFamily: 'Inter_700Bold' }}
-                        className="ml-1.5 text-[12px] text-[#6135E8]">
+                        style={{ fontFamily: 'Inter_700Bold', color: theme.colors.accent }}
+                        className="ml-1.5 text-[12px]">
                         Calendario
                       </Text>
                     </Pressable>
                   </View>
 
                   <View
-                    className={`mt-3 flex-row items-center rounded-[22px] border px-4 ${
-                      dataInvalida
-                        ? 'border-red-400 bg-red-50'
+                    className="mt-3 flex-row items-center rounded-[22px] border px-4"
+                    style={{
+                      backgroundColor: dataInvalida ? '#FFF1F2' : theme.colors.input,
+                      borderColor: dataInvalida
+                        ? '#f87171'
                         : campoFocado === 'data'
-                          ? 'border-[#6135E8] bg-white'
-                          : 'border-[#E6E8EE] bg-[#FBFCFD]'
-                    }`}>
+                          ? theme.colors.accent
+                          : theme.colors.border,
+                    }}>
                     <Ionicons
                       name="calendar-outline"
                       size={18}
-                      color={dataInvalida ? '#ef4444' : '#128C7E'}
+                      color={dataInvalida ? '#ef4444' : theme.colors.primary}
                     />
 
                     <TextInput
                       placeholder="DD/MM/AAAA"
-                      placeholderTextColor="#9CA0AA"
+                      placeholderTextColor={theme.colors.textSoft}
                       value={dateTexto}
                       onChangeText={(text) => setDateTexto(formatReminderDateInput(text))}
                       onFocus={() => setCampoFocado('data')}
@@ -395,15 +411,17 @@ export default function CriarComando() {
                       }
                       keyboardType="numeric"
                       maxLength={10}
-                      style={{ fontFamily: 'Inter_400Regular' }}
-                      className="ml-2 flex-1 py-3.5 text-[15px] text-[#24252C]"
+                      style={{ fontFamily: 'Inter_400Regular', color: theme.colors.text }}
+                      className="ml-2 flex-1 py-3.5 text-[15px]"
                     />
 
                     {selectedWeekdayLabel ? (
-                      <View className="rounded-full bg-[#E7F8F1] px-2.5 py-1.5">
+                      <View
+                        className="rounded-full px-2.5 py-1.5"
+                        style={{ backgroundColor: theme.colors.successMuted }}>
                         <Text
-                          style={{ fontFamily: 'Inter_700Bold' }}
-                          className="text-[11px] text-[#128C7E]">
+                          style={{ fontFamily: 'Inter_700Bold', color: theme.colors.success }}
+                          className="text-[11px]">
                           {selectedWeekdayLabel}
                         </Text>
                       </View>
@@ -411,8 +429,8 @@ export default function CriarComando() {
                   </View>
 
                   <Text
-                    style={{ fontFamily: 'Inter_400Regular' }}
-                    className="mt-2 text-[12px] text-[#8B8D97]">
+                    style={{ fontFamily: 'Inter_400Regular', color: theme.colors.textSoft }}
+                    className="mt-2 text-[12px]">
                     {selectedDateSummary || 'Digite uma data ou escolha no calendario.'}
                   </Text>
 
@@ -427,12 +445,18 @@ export default function CriarComando() {
                           onPress={() => setDateTexto(inputDate)}
                           accessibilityRole="button"
                           accessibilityLabel={`Selecionar ${option.label}`}
-                          className={`mr-2 mt-2 rounded-full px-4 py-2.5 ${
-                            selected ? 'bg-[#E7F8F1]' : 'bg-[#F2F4F7]'
-                          }`}>
+                          className="mr-2 mt-2 rounded-full px-4 py-2.5"
+                          style={{
+                            backgroundColor: selected
+                              ? theme.colors.successMuted
+                              : theme.colors.cardMuted,
+                          }}>
                           <Text
-                            style={{ fontFamily: 'Inter_700Bold' }}
-                            className={`text-sm ${selected ? 'text-[#128C7E]' : 'text-[#747887]'}`}>
+                            style={{
+                              fontFamily: 'Inter_700Bold',
+                              color: selected ? theme.colors.success : theme.colors.textMuted,
+                            }}
+                            className="text-sm">
                             {option.label}
                           </Text>
                         </Pressable>
@@ -453,8 +477,8 @@ export default function CriarComando() {
               {repeatType === 'weekly' ? (
                 <View className="mt-6">
                   <Text
-                    style={{ fontFamily: 'Inter_700Bold' }}
-                    className="text-[15px] text-[#24252C]">
+                    style={{ fontFamily: 'Inter_700Bold', color: theme.colors.text }}
+                    className="text-[15px]">
                     Dia da semana
                   </Text>
                   <View className="mt-2 flex-row flex-wrap">
@@ -467,12 +491,18 @@ export default function CriarComando() {
                           onPress={() => setWeekday(option.value)}
                           accessibilityRole="button"
                           accessibilityLabel={`Selecionar ${option.label}`}
-                          className={`mr-2 mt-2 rounded-full px-3.5 py-2.5 ${
-                            selected ? 'bg-[#E7F8F1]' : 'bg-[#F2F4F7]'
-                          }`}>
+                          className="mr-2 mt-2 rounded-full px-3.5 py-2.5"
+                          style={{
+                            backgroundColor: selected
+                              ? theme.colors.successMuted
+                              : theme.colors.cardMuted,
+                          }}>
                           <Text
-                            style={{ fontFamily: 'Inter_700Bold' }}
-                            className={`text-sm ${selected ? 'text-[#128C7E]' : 'text-[#747887]'}`}>
+                            style={{
+                              fontFamily: 'Inter_700Bold',
+                              color: selected ? theme.colors.success : theme.colors.textMuted,
+                            }}
+                            className="text-sm">
                             {option.shortLabel}
                           </Text>
                         </Pressable>
@@ -484,28 +514,30 @@ export default function CriarComando() {
 
               <View className="mt-6">
                 <Text
-                  style={{ fontFamily: 'Inter_700Bold' }}
-                  className="text-[15px] text-[#24252C]">
+                  style={{ fontFamily: 'Inter_700Bold', color: theme.colors.text }}
+                  className="text-[15px]">
                   Horario
                 </Text>
 
                 <View
-                  className={`mt-3 flex-row items-center rounded-[22px] border px-4 ${
-                    horaInvalida
-                      ? 'border-red-400 bg-red-50'
+                  className="mt-3 flex-row items-center rounded-[22px] border px-4"
+                  style={{
+                    backgroundColor: horaInvalida ? '#FFF1F2' : theme.colors.input,
+                    borderColor: horaInvalida
+                      ? '#f87171'
                       : campoFocado === 'hora'
-                        ? 'border-[#6135E8] bg-white'
-                        : 'border-[#E6E8EE] bg-[#FBFCFD]'
-                  }`}>
+                        ? theme.colors.accent
+                        : theme.colors.border,
+                  }}>
                   <Ionicons
                     name="time-outline"
                     size={18}
-                    color={horaInvalida ? '#ef4444' : '#128C7E'}
+                    color={horaInvalida ? '#ef4444' : theme.colors.primary}
                   />
 
                   <TextInput
                     placeholder="00:00"
-                    placeholderTextColor="#9CA0AA"
+                    placeholderTextColor={theme.colors.textSoft}
                     value={horaTexto}
                     onChangeText={(text) => setHoraTexto(formatReminderTimeInput(text))}
                     onFocus={() => setCampoFocado('hora')}
@@ -514,8 +546,8 @@ export default function CriarComando() {
                     }
                     keyboardType="numeric"
                     maxLength={5}
-                    style={{ fontFamily: 'Inter_400Regular' }}
-                    className="ml-2 flex-1 py-3.5 text-[15px] text-[#24252C]"
+                    style={{ fontFamily: 'Inter_400Regular', color: theme.colors.text }}
+                    className="ml-2 flex-1 py-3.5 text-[15px]"
                   />
                 </View>
 
@@ -529,12 +561,18 @@ export default function CriarComando() {
                         onPress={() => setHoraTexto(horario)}
                         accessibilityRole="button"
                         accessibilityLabel={`Selecionar horario ${horario}`}
-                        className={`mr-2 mt-2 rounded-full px-4 py-2.5 ${
-                          selecionado ? 'bg-[#E7F8F1]' : 'bg-[#F2F4F7]'
-                        }`}>
+                        className="mr-2 mt-2 rounded-full px-4 py-2.5"
+                        style={{
+                          backgroundColor: selecionado
+                            ? theme.colors.successMuted
+                            : theme.colors.cardMuted,
+                        }}>
                         <Text
-                          style={{ fontFamily: 'Inter_700Bold' }}
-                          className={`text-sm ${selecionado ? 'text-[#128C7E]' : 'text-[#747887]'}`}>
+                          style={{
+                            fontFamily: 'Inter_700Bold',
+                            color: selecionado ? theme.colors.success : theme.colors.textMuted,
+                          }}
+                          className="text-sm">
                           {horario}
                         </Text>
                       </Pressable>

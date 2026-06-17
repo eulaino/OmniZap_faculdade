@@ -10,6 +10,7 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
+  Switch,
   Text,
   TextInput,
   View,
@@ -23,6 +24,7 @@ import {
   activateWhatsAppFromApp,
   getWhatsAppActivationErrorMessage,
 } from '@/services/whatsappActivation';
+import { useAppTheme, useThemePreference } from '@/theme/appTheme';
 import { auth, database } from '../../src/config/firebase';
 
 type ProfileRecord = {
@@ -31,8 +33,6 @@ type ProfileRecord = {
   whatsappActive?: boolean;
   whatsappLid?: string | null;
 };
-
-const pageGradient = ['#FFFFFF', '#FBFFFD', '#F3FFF8', '#F7F3FF'] as const;
 
 const fonts = {
   regular: { fontFamily: 'Inter_400Regular' },
@@ -64,6 +64,8 @@ function formatPhone(phone?: string | null) {
 }
 
 export default function Perfil() {
+  const theme = useAppTheme();
+  const { preference, toggleTheme } = useThemePreference();
   const user = auth.currentUser;
   const [userName, setUserName] = useState<string | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
@@ -101,6 +103,8 @@ export default function Perfil() {
   const accountEmail = user?.email ?? 'sem-email@conta.com';
   const avatarLetter = (displayName || accountEmail || '?')[0].toUpperCase();
   const formattedPhone = useMemo(() => formatPhone(phone), [phone]);
+  const themeModeLabel =
+    preference === 'system' ? 'Sistema' : theme.isDark ? 'Tema escuro' : 'Tema claro';
   const canSaveName = nome.trim().length >= 2 && !saving;
 
   function openEditProfile() {
@@ -169,9 +173,9 @@ export default function Perfil() {
 
   if (loadingUser) {
     return (
-      <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+      <LinearGradient colors={theme.gradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#128C7E" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </LinearGradient>
     );
@@ -180,45 +184,59 @@ export default function Perfil() {
   if (!user) return null;
 
   return (
-    <LinearGradient colors={pageGradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
+    <LinearGradient colors={theme.gradient} locations={[0, 0.35, 0.72, 1]} style={{ flex: 1 }}>
       <SafeAreaView edges={['top']} className="flex-1">
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar backgroundColor={theme.colors.statusBar} barStyle={theme.statusBarStyle} />
 
         <ScrollView
           className="flex-1"
           contentContainerClassName="px-6 pb-28 pt-5"
           showsVerticalScrollIndicator={false}>
           <View className="items-center">
-            <Text style={fonts.black} className="text-[20px] leading-6 text-[#24252C]">
+            <Text
+              style={[fonts.black, { color: theme.colors.text }]}
+              className="text-[20px] leading-6">
               Perfil
             </Text>
-            <Text style={fonts.medium} className="mt-1 text-[12px] text-[#8B8D97]">
+            <Text
+              style={[fonts.medium, { color: theme.colors.textSoft }]}
+              className="mt-1 text-[12px]">
               Conta e preferencias
             </Text>
           </View>
 
-          <View className="mt-7 rounded-[30px] bg-white p-5" style={surfaceShadow}>
+          <View
+            className="mt-7 rounded-[30px] p-5"
+            style={[surfaceShadow, { backgroundColor: theme.colors.card }]}>
             <View className="flex-row items-start">
-              <View className="h-[72px] w-[72px] items-center justify-center rounded-[26px] bg-[#128C7E]">
+              <View
+                className="h-[72px] w-[72px] items-center justify-center rounded-[26px]"
+                style={{ backgroundColor: theme.colors.primary }}>
                 <Text style={fonts.black} className="text-[28px] text-white">
                   {avatarLetter}
                 </Text>
               </View>
 
               <View className="ml-4 flex-1">
-                <View className="self-start rounded-full bg-[#E7F8F1] px-3 py-1.5">
-                  <Text style={fonts.bold} className="text-[11px] text-[#128C7E]">
+                <View
+                  className="self-start rounded-full px-3 py-1.5"
+                  style={{ backgroundColor: theme.colors.successMuted }}>
+                  <Text
+                    style={[fonts.bold, { color: theme.colors.success }]}
+                    className="text-[11px]">
                     Conta ativa
                   </Text>
                 </View>
 
-                <Text style={fonts.black} className="mt-3 text-[23px] leading-7 text-[#24252C]">
+                <Text
+                  style={[fonts.black, { color: theme.colors.text }]}
+                  className="mt-3 text-[23px] leading-7">
                   {displayName}
                 </Text>
 
                 <Text
-                  style={fonts.medium}
-                  className="mt-1 text-[13px] leading-5 text-[#747887]"
+                  style={[fonts.medium, { color: theme.colors.textMuted }]}
+                  className="mt-1 text-[13px] leading-5"
                   numberOfLines={1}>
                   {accountEmail}
                 </Text>
@@ -226,13 +244,19 @@ export default function Perfil() {
             </View>
 
             <View className="mt-5 gap-3">
-              <View className="flex-row items-center rounded-[22px] bg-[#F7F8FB] px-4 py-3">
-                <Phone size={17} color="#128C7E" />
+              <View
+                className="flex-row items-center rounded-[22px] px-4 py-3"
+                style={{ backgroundColor: theme.colors.cardMuted }}>
+                <Phone size={17} color={theme.colors.primary} />
                 <View className="ml-3 flex-1">
-                  <Text style={fonts.bold} className="text-[11px] text-[#8B8D97]">
+                  <Text
+                    style={[fonts.bold, { color: theme.colors.textSoft }]}
+                    className="text-[11px]">
                     WhatsApp dos lembretes
                   </Text>
-                  <Text style={fonts.bold} className="mt-0.5 text-[14px] text-[#24252C]">
+                  <Text
+                    style={[fonts.bold, { color: theme.colors.text }]}
+                    className="mt-0.5 text-[14px]">
                     {formattedPhone}
                   </Text>
                   <Text
@@ -244,14 +268,15 @@ export default function Perfil() {
                   </Text>
                 </View>
                 {whatsappActive ? (
-                  <CheckCircle2 size={18} color="#128C7E" />
+                  <CheckCircle2 size={18} color={theme.colors.primary} />
                 ) : (
                   <Pressable
                     onPress={ativarWhatsApp}
                     disabled={activatingWhatsApp || !phone}
                     accessibilityRole="button"
                     accessibilityLabel="Ativar WhatsApp dos lembretes"
-                    className="min-w-[72px] items-center rounded-[16px] bg-[#128C7E] px-3 py-2">
+                    className="min-w-[72px] items-center rounded-[16px] px-3 py-2"
+                    style={{ backgroundColor: theme.colors.primary }}>
                     {activatingWhatsApp ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
@@ -273,15 +298,19 @@ export default function Perfil() {
                 </Text>
               ) : null}
 
-              <View className="flex-row items-center rounded-[22px] bg-[#F7F8FB] px-4 py-3">
-                <Mail size={17} color="#6135E8" />
+              <View
+                className="flex-row items-center rounded-[22px] px-4 py-3"
+                style={{ backgroundColor: theme.colors.cardMuted }}>
+                <Mail size={17} color={theme.colors.accent} />
                 <View className="ml-3 flex-1">
-                  <Text style={fonts.bold} className="text-[11px] text-[#8B8D97]">
+                  <Text
+                    style={[fonts.bold, { color: theme.colors.textSoft }]}
+                    className="text-[11px]">
                     E-mail de acesso
                   </Text>
                   <Text
-                    style={fonts.bold}
-                    className="mt-0.5 text-[14px] text-[#24252C]"
+                    style={[fonts.bold, { color: theme.colors.text }]}
+                    className="mt-0.5 text-[14px]"
                     numberOfLines={1}>
                     {accountEmail}
                   </Text>
@@ -293,7 +322,8 @@ export default function Perfil() {
               onPress={openEditProfile}
               accessibilityRole="button"
               accessibilityLabel="Editar perfil"
-              className="mt-5 h-[52px] flex-row items-center justify-center rounded-[20px] bg-[#128C7E]">
+              className="mt-5 h-[52px] flex-row items-center justify-center rounded-[20px]"
+              style={{ backgroundColor: theme.colors.primary }}>
               <Pencil size={16} color="#FFFFFF" />
               <Text style={fonts.black} className="ml-2 text-[15px] text-white">
                 Editar perfil
@@ -308,9 +338,31 @@ export default function Perfil() {
           />
 
           <View className="mt-5">
-            <Text style={fonts.black} className="mb-3 text-[18px] text-[#24252C]">
+            <Text style={[fonts.black, { color: theme.colors.text }]} className="mb-3 text-[18px]">
               Preferencias
             </Text>
+            <View
+              className="mb-3 flex-row items-center rounded-[24px] px-4 py-3"
+              style={[surfaceShadow, { backgroundColor: theme.colors.card }]}>
+              <View className="flex-1">
+                <Text style={[fonts.bold, { color: theme.colors.text }]} className="text-[15px]">
+                  Tema escuro
+                </Text>
+                <Text
+                  style={[fonts.medium, { color: theme.colors.textSoft }]}
+                  className="mt-0.5 text-[12px]">
+                  {themeModeLabel}
+                </Text>
+              </View>
+              <Switch
+                value={theme.isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: theme.colors.border, true: theme.colors.accentMuted }}
+                thumbColor={theme.isDark ? theme.colors.accent : theme.colors.card}
+                ios_backgroundColor={theme.colors.border}
+                accessibilityLabel="Alternar tema escuro"
+              />
+            </View>
             <MenuPerfil userName={userName} />
           </View>
         </ScrollView>
@@ -328,17 +380,26 @@ export default function Perfil() {
               extraScrollHeight={72}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
-              <View className="rounded-t-[30px] bg-white px-5 pb-7 pt-3" style={surfaceShadow}>
+              <View
+                className="rounded-t-[30px] px-5 pb-7 pt-3"
+                style={[surfaceShadow, { backgroundColor: theme.colors.card }]}>
                 <View className="items-center pb-3">
-                  <View className="h-1.5 w-11 rounded-full bg-[#D8DEE4]" />
+                  <View
+                    className="h-1.5 w-11 rounded-full"
+                    style={{ backgroundColor: theme.colors.border }}
+                  />
                 </View>
 
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text style={fonts.black} className="text-[22px] text-[#24252C]">
+                    <Text
+                      style={[fonts.black, { color: theme.colors.text }]}
+                      className="text-[22px]">
                       Editar perfil
                     </Text>
-                    <Text style={fonts.medium} className="mt-1 text-[13px] text-[#8B8D97]">
+                    <Text
+                      style={[fonts.medium, { color: theme.colors.textSoft }]}
+                      className="mt-1 text-[13px]">
                       O nome aparece na sua conta.
                     </Text>
                   </View>
@@ -348,28 +409,36 @@ export default function Perfil() {
                     hitSlop={10}
                     accessibilityRole="button"
                     accessibilityLabel="Fechar edicao de perfil"
-                    className="h-10 w-10 items-center justify-center rounded-full bg-[#F2F4F7]">
-                    <X size={18} color="#747887" />
+                    className="h-10 w-10 items-center justify-center rounded-full"
+                    style={{ backgroundColor: theme.colors.cardMuted }}>
+                    <X size={18} color={theme.colors.textMuted} />
                   </Pressable>
                 </View>
 
                 <View className="mt-6">
-                  <Text style={fonts.bold} className="mb-2 text-[13px] text-[#747887]">
+                  <Text
+                    style={[fonts.bold, { color: theme.colors.textMuted }]}
+                    className="mb-2 text-[13px]">
                     Nome
                   </Text>
 
-                  <View className="flex-row items-center rounded-[20px] border border-[#E6E8EE] bg-[#F7F8FB] px-4">
-                    <UserRound size={17} color="#128C7E" />
+                  <View
+                    className="flex-row items-center rounded-[20px] border px-4"
+                    style={{
+                      backgroundColor: theme.colors.cardMuted,
+                      borderColor: theme.colors.border,
+                    }}>
+                    <UserRound size={17} color={theme.colors.primary} />
                     <TextInput
                       value={nome}
                       onChangeText={setNome}
                       placeholder="Digite seu nome"
-                      placeholderTextColor="#9CA0AA"
+                      placeholderTextColor={theme.colors.textSoft}
                       autoCapitalize="words"
-                      cursorColor="#128C7E"
-                      selectionColor="#128C7E"
-                      style={fonts.medium}
-                      className="ml-3 flex-1 py-4 text-[16px] text-[#24252C]"
+                      cursorColor={theme.colors.primary}
+                      selectionColor={theme.colors.primary}
+                      className="ml-3 flex-1 py-4 text-[16px]"
+                      style={[fonts.medium, { color: theme.colors.text }]}
                     />
                   </View>
                 </View>
@@ -380,8 +449,14 @@ export default function Perfil() {
                     disabled={saving}
                     accessibilityRole="button"
                     accessibilityLabel="Cancelar edicao"
-                    className="h-[52px] flex-1 items-center justify-center rounded-[18px] border border-[#E1E5EB] bg-white">
-                    <Text style={fonts.bold} className="text-[14px] text-[#747887]">
+                    className="h-[52px] flex-1 items-center justify-center rounded-[18px] border"
+                    style={{
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.colors.border,
+                    }}>
+                    <Text
+                      style={[fonts.bold, { color: theme.colors.textMuted }]}
+                      className="text-[14px]">
                       Cancelar
                     </Text>
                   </Pressable>
@@ -391,9 +466,10 @@ export default function Perfil() {
                     disabled={!canSaveName}
                     accessibilityRole="button"
                     accessibilityLabel="Salvar perfil"
-                    className={`h-[52px] flex-1 flex-row items-center justify-center rounded-[18px] ${
-                      canSaveName ? 'bg-[#128C7E]' : 'bg-[#DCE2E8]'
-                    }`}>
+                    className="h-[52px] flex-1 flex-row items-center justify-center rounded-[18px]"
+                    style={{
+                      backgroundColor: canSaveName ? theme.colors.primary : theme.colors.border,
+                    }}>
                     {saving ? (
                       <ActivityIndicator color="#fff" />
                     ) : (

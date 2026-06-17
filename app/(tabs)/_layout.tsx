@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { auth } from '../../src/config/firebase';
+import { useAppTheme } from '@/theme/appTheme';
 
 const dockShadow = {
   shadowColor: '#6135E8',
@@ -26,6 +27,7 @@ const actionShadow = {
 };
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const bottom = Math.max(insets.bottom, 10);
 
@@ -33,7 +35,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const route = state.routes[routeIndex];
     const options = descriptors[route.key]?.options;
     const focused = state.index === routeIndex;
-    const color = focused ? '#6135E8' : '#8B7CC7';
+    const color = focused ? theme.colors.accent : theme.colors.textSoft;
     const isHome = route.name === 'home';
     const iconName = isHome
       ? focused
@@ -71,8 +73,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom }}>
       <View
-        className="mx-5 h-16 flex-row items-center rounded-[22px] bg-[#EEE7FF] px-3"
-        style={dockShadow}>
+        className="mx-5 h-16 flex-row items-center rounded-[22px] px-3"
+        style={[dockShadow, { backgroundColor: theme.colors.accentMuted }]}>
         {renderTab(0)}
         <View className="w-[78px]" />
         {renderTab(1)}
@@ -82,8 +84,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         onPress={() => router.push('/criar-comando')}
         accessibilityRole="button"
         accessibilityLabel="Novo lembrete"
-        className="absolute -top-6 h-14 w-14 items-center justify-center self-center rounded-full bg-[#6135E8]"
-        style={actionShadow}>
+        className="absolute -top-6 h-14 w-14 items-center justify-center self-center rounded-full"
+        style={[actionShadow, { backgroundColor: theme.colors.accent }]}>
         <Ionicons name="add" size={30} color="#FFFFFF" />
       </Pressable>
     </View>
@@ -91,6 +93,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 }
 
 export default function TabsLayout() {
+  const theme = useAppTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,9 +108,13 @@ export default function TabsLayout() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#6135E8" />
-        <Text className="mt-3 text-slate-500">Verificando sessao...</Text>
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.accent} />
+        <Text className="mt-3" style={{ color: theme.colors.textSoft }}>
+          Verificando sessao...
+        </Text>
       </View>
     );
   }
